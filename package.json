@@ -21,10 +21,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/NicolasR14/Steam-achievements-alert-discord-bot.git"
+    "url": "git+https://github.com/Lambda-fr/Steam-achievements-alert-discord-bot.git"
   },
   "bugs": {
-    "url": "https://github.com/NicolasR14/Steam-achievements-alert-discord-bot/issues"
+    "url": "https://github.com/Lambda-fr/Steam-achievements-alert-discord-bot/issues"
   },
-  "homepage": "https://github.com/NicolasR14/Steam-achievements-alert-discord-bot#readme"
+  "homepage": "https://github.com/Lambda-fr/Steam-achievements-alert-discord-bot#readme"
 }
