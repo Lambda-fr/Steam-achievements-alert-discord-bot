@@ -1,4 +1,4 @@
-const { ButtonBuilder, ButtonStyle } = require('discord.js');
+import { ButtonBuilder, ButtonStyle } from 'discord.js';
 const backButton = new ButtonBuilder({
   style: ButtonStyle.Secondary,
   label: 'Back',
@@ -12,4 +12,4 @@ const forwardButton = new ButtonBuilder({
   customId: 'forward'
 })
 
-module.exports = { backButton, forwardButton };
+export { backButton, forwardButton };

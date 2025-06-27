@@ -1,10 +1,11 @@
-const { REST, Routes } = require('discord.js');
-const fs = require('node:fs');
-const path = require('node:path');
+import { REST, Routes } from 'discord.js';
+import { accessSync, constants, writeFileSync, readdirSync, existsSync } from 'node:fs';
+import { join } from 'node:path';
+import { pathToFileURL } from 'url';
 
 function checkIfFileExists(filePath) {
 	try {
-		fs.accessSync(filePath, fs.constants.F_OK);
+		accessSync(filePath, constants.F_OK);
 		return true;
 	} catch (err) {
 		return false;
@@ -12,7 +13,13 @@ function checkIfFileExists(filePath) {
 }
 
 function createJsonFile(filePath, data) {
-	fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+	writeFileSync(filePath, JSON.stringify(data, null, 2));
+}
+
+function exitWithError(message, error = null) {
+	console.error(`[ERROR] ${message}`);
+	if (error) console.error(error);
+	process.exit(1);
 }
 
 const defaultData = {
@@ -29,48 +36,63 @@ const defaultConfig = {
 	lang: "english"
 }
 
-filePath = 'src/data.json'
+let filePath = 'src/data.json';
 if (!checkIfFileExists(filePath)) {
 	createJsonFile(filePath, defaultData);
 	console.log(`${filePath} file created`);
-}
-else {
+} else {
 	console.log(`${filePath} already existing`);
 }
-filePath = 'config.json'
+
+filePath = 'config.json';
 if (!checkIfFileExists(filePath)) {
 	createJsonFile(filePath, defaultConfig);
 	console.log(`${filePath} file created, please fill it`);
-	return
-}
-else {
+	process.exit(1);
+} else {
 	console.log(`${filePath} already existing`);
 }
 
-const { clientId, guildId, discord_token } = require('./config.json');
+import config from './config.json' with { type: 'json' };
+
+const { clientId, guildId, discord_token } = config;
 if (clientId === "" || guildId === "" || discord_token === "") {
-	console.log(`Please fill ./config.json`);
-	return
+	exitWithError('Please fill ./config.json');
 }
 
+
 const commands = [];
-// Grab all the command files from the commands directory you created earlier
-const foldersPath = path.join(__dirname, 'src/commands');
-const commandFolders = fs.readdirSync(foldersPath);
+const foldersPath = join(process.cwd(), 'src/commands');
+if (!existsSync(foldersPath)) {
+	exitWithError(`Commands folder not found at ${foldersPath}`);
+}
+
+let totalCommands = 0;
+let failedCommands = 0;
+
+const commandFolders = readdirSync(foldersPath);
 
 for (const folder of commandFolders) {
-	// Grab all the command files from the commands directory you created earlier
-	const commandsPath = path.join(foldersPath, folder);
-	const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
-	// Grab the SlashCommandBuilder#toJSON() output of each command's data for deployment
+	const commandsPath = join(foldersPath, folder);
+	if (!existsSync(commandsPath)) {
+		console.warn(`[WARNING] Command subfolder not found: ${commandsPath}`);
+		continue;
+	}
+	const commandFiles = readdirSync(commandsPath).filter(file => file.endsWith('.js'));
 	for (const file of commandFiles) {
-		const filePath = path.join(commandsPath, file);
-		const command = require(filePath);
-		if ('data' in command && 'execute' in command) {
-			console.log(command.data)
-			commands.push(command.data.toJSON());
-		} else {
-			console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
+		const filePath = join(commandsPath, file);
+		try {
+			const command = await import(pathToFileURL(filePath));
+			if ('data' in command && 'execute' in command) {
+				commands.push(command.data.toJSON());
+				totalCommands++;
+			} else {
+				console.warn(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
+				failedCommands++;
+			}
+		} catch (err) {
+			console.warn(`[WARNING] Failed to import command at ${filePath}:`, err.message);
+			failedCommands++;
 		}
 	}
 }
@@ -82,16 +104,13 @@ const rest = new REST().setToken(discord_token);
 (async () => {
 	try {
 		console.log(`Started refreshing ${commands.length} application (/) commands.`);
-
-		// The put method is used to fully refresh all commands in the guild with the current set
 		const data = await rest.put(
 			Routes.applicationGuildCommands(clientId, guildId),
 			{ body: commands },
 		);
-
 		console.log(`Successfully reloaded ${data.length} application (/) commands.`);
+		console.log(`Commands loaded: ${totalCommands}, failed: ${failedCommands}`);
 	} catch (error) {
-		// And of course, make sure you catch and log any errors!
-		console.error(error);
+		exitWithError('Failed to deploy commands', error);
 	}
 })();

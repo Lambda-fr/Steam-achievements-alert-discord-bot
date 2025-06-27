@@ -1,4 +1,4 @@
-const { SlashCommandBuilder } = require('discord.js');
+import { SlashCommandBuilder } from 'discord.js';
 
 function list_players(guildId, users) {
 
@@ -18,12 +18,9 @@ function list_players(guildId, users) {
 	return `${header}\`\`\`\n${formattedLines}\n\`\`\``
 }
 
-module.exports = {
-	data: new SlashCommandBuilder()
-		.setName('list_players')
-		.setDescription('Lists the players the bot listens to for new achievements'),
-
-	async execute(interaction, globalVariables) {
-		await interaction.reply(list_players(interaction.guildId, globalVariables.Users));
-	},
-};
+export const data = new SlashCommandBuilder()
+	.setName('list_players')
+	.setDescription('Lists the players the bot listens to for new achievements');
+export async function execute(interaction, globalVariables) {
+	await interaction.reply(list_players(interaction.guildId, globalVariables.Users));
+}

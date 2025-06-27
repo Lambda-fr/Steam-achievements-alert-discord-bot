@@ -1,4 +1,4 @@
-const { SlashCommandBuilder } = require('discord.js');
+import { SlashCommandBuilder } from 'discord.js';
 
 function list_games(guildId, games) {
 	let games_alpha = [...games].sort((a, b) => a.realName.localeCompare(b.realName));
@@ -30,20 +30,17 @@ function list_games(guildId, games) {
 	return messages
 }
 
-module.exports = {
-	data: new SlashCommandBuilder()
-		.setName('list_games')
-		.setDescription('Lists the games the bot listens to for new achievements'),
-
-	async execute(interaction, globalVariables) {
-		const messages = list_games(interaction.guildId, globalVariables.Games);
-		for (let i = 0; i < messages.length; i++) {
-			if (i == 0) {
-				await interaction.reply(`Games I listen to for new achievements :${messages[i]}`);
-			}
-			else {
-				interaction.channel.send(messages[i])
-			}
+export const data = new SlashCommandBuilder()
+	.setName('list_games')
+	.setDescription('Lists the games the bot listens to for new achievements');
+export async function execute(interaction, globalVariables) {
+	const messages = list_games(interaction.guildId, globalVariables.Games);
+	for (let i = 0; i < messages.length; i++) {
+		if (i == 0) {
+			await interaction.reply(`Games I listen to for new achievements :${messages[i]}`);
 		}
-	},
-};
+		else {
+			interaction.channel.send(messages[i]);
+		}
+	}
+}

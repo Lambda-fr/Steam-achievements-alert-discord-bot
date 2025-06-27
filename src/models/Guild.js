@@ -6,4 +6,4 @@ class Guild {
     }
 }
 
-module.exports = { Guild }
+export default Guild
