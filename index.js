@@ -2,13 +2,12 @@
 import { pathToFileURL } from 'node:url';
 import { readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
-import { loadImage } from "canvas";
 import { fileURLToPath } from 'node:url';
 import { Client, Collection, Events, GatewayIntentBits } from 'discord.js';
 import config from './config.json' with { type: 'json' };
 
 import { getInfosDB } from './src/connectAndQueryJSON.js';
-import { loadAvatars, verifyAvatars, listenForNewAchievements, checkForNewUpdates } from './src/steam_interface.js';
+import { loadAvatars, verifyAvatars, listenForNewAchievements } from './src/steam_interface.js';
 import Guild from './src/models/Guild.js';
 
 // Add a timestamp to console logs
@@ -85,8 +84,7 @@ client.once(Events.ClientReady, async c => {
 		console.table(globalVariables.Guilds)
 		console.log("Games stats updated")
 
-		listenForNewAchievements(globalVariables);
-		checkForNewUpdates(globalVariables)
+		listenForNewAchievements(globalVariables)
 	} catch (err) {
 		console.error("Fatal error during bot initialization:", err);
 		process.exit(1);

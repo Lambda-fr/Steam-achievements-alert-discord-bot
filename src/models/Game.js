@@ -2,7 +2,6 @@ import fetch from 'node-fetch';
 import config from '../../config.json' with { type: 'json' };
 const { API_Steam_key, lang } = config;
 import Achievement from './Achievement.js';
-import discordImageFunctions from '../discord_loadimages.cjs'
 
 class Game {
     constructor(name, id, guilds, aliases) {
@@ -248,41 +247,5 @@ class Game {
         }
     }
 
-    async isUpToDate(guilds) {
-        const id = this.id;
-        try {
-            const res = await fetch(`http://api.steampowered.com/ISteamUserStats/GetSchemaForGame/v2/?appid=${id}&key=${API_Steam_key}`);
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const value = await res.json();
-            if (value.game?.gameVersion) {
-                let gameVersion = parseInt(value.game.gameVersion);
-                if (this.version) {
-                    if (gameVersion === this.version) {
-                        return true;
-                    } else {
-                        await this.displayNewUpdateMessage(guilds);
-                    }
-                }
-                this.version = gameVersion;
-                console.log(`${id} : saved game version (${this.version})`);
-            }
-        } catch (err) {
-            console.error(`isUpToDate error for ${id}:`, err);
-            return false;
-        }
-        return true;
-    }
-
-    async displayNewUpdateMessage(guilds) {
-        for (const guild of guilds) {
-            if (this.guilds.includes(guild.id)) {
-                try {
-                    guild.channel.send({ content: `New release available for ${this.realName} !` });
-                } catch (err) {
-                    console.error(`displayNewUpdateMessage error for guild ${guild.id}:`, err);
-                }
-            }
-        }
-    }
 }
 export default Game;

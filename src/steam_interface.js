@@ -156,21 +156,5 @@ async function isGameIdValid(game_id) {
   }
 }
 
-async function checkForNewUpdates(globalVariables) {
-  // Periodically check for updates for all games
-  setInterval(async function () {
-    try {
-      await Promise.all(globalVariables.Games.map(async game => {
-        try {
-          await game.isUpToDate(globalVariables.Guilds);
-        } catch (err) {
-          console.error(`Error checking updates for game ${game.name}:`, err);
-        }
-      }));
-    } catch (err) {
-      console.error("Error in checkForNewUpdates interval:", err);
-    }
-  }, 21600000);
-}
 
-export { loadAvatars, verifyAvatars, listenForNewAchievements, isPublicProfile, isGameIdValid, checkForNewUpdates };
+export { loadAvatars, verifyAvatars, listenForNewAchievements, isPublicProfile, isGameIdValid };
