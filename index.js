@@ -66,7 +66,7 @@ client.once(Events.ClientReady, async c => {
 		await Promise.all([await Promise.all(globalVariables.Games.map(async game => {
 			await Promise.all(globalVariables.Users.map(async user => {
 				{
-					await game.updateAchievements(user, globalVariables.t_lookback, true)
+					await game.updateAchievementsForUser(user, globalVariables.t_lookback, true)
 				}
 			}))
 			if (game.realName == '') {
@@ -75,7 +75,7 @@ client.once(Events.ClientReady, async c => {
 		})),
 
 		await Promise.all(globalVariables.Users.map(async user => {
-			await user.getPlaytime(globalVariables.Games)
+			await user.getPlaytime()
 		}))
 		])
 

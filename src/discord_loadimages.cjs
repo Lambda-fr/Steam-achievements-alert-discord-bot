@@ -147,7 +147,7 @@ async function displayProgressionBar(interaction, gameObject) {
             context.fillStyle = '#ffffff';
             context.fillText("Progress on " + name_display, 25, 35);
 
-            const tps_max = Math.max(...users_nb_unlocked_not_null.map(u => { return u[0].timePlayedByGame[gameObject.id] }))
+            const tps_max = Math.max(...users_nb_unlocked_not_null.map(u => { return u[0].timePlayedByGame[gameObject.id]; }));
 
             const barLength = 480
 
@@ -158,7 +158,7 @@ async function displayProgressionBar(interaction, gameObject) {
                 context.fillText(`${v[1]}/${gameObject.nbTotal} (${parseInt(100 * v[1] / gameObject.nbTotal)}%)`, 100 + barLength + 10, 71 + n * 70);
                 context.drawImage(black_bar, 100, 58 + n * 70, barLength, 15);
                 context.drawImage(blue_bar, 100, 58 + n * 70, barLength * v[1] / gameObject.nbTotal, 15);
-                context.fillText(`${v[0].timePlayedByGame[gameObject.id]} h`, 100 + barLength + 10, 91 + n * 70);
+                context.fillText(`${(v[0].timePlayedByGame[gameObject.id] / 60).toFixed(1)} h`, 100 + barLength + 10, 91 + n * 70);
                 context.drawImage(black_bar, 100, 78 + n * 70, barLength, 15);
                 context.drawImage(grey_bar, 100, 78 + n * 70, barLength * v[0].timePlayedByGame[gameObject.id] / tps_max, 15)
                 n += 1;

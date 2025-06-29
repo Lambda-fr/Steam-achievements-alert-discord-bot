@@ -80,7 +80,7 @@ function listenForNewAchievements(globalVariables) {
           await user.getRecentlyPlayedGames(globalVariables.Games);
           await Promise.all(user.recentlyPlayedGames.map(async game => {
             try {
-              await game.updateAchievements(user, globalVariables.t_lookback, false);
+              await game.updateAchievementsForUser(user, globalVariables.t_lookback, false);
             } catch (err) {
               console.error(`Error updating achievements for game ${game.name}:`, err);
             }
@@ -94,16 +94,6 @@ function listenForNewAchievements(globalVariables) {
       // Consider refactoring to avoid side effects
       const new_achievements = globalVariables.Users.map(user => user.newAchievements.reverse().map(a => [user, a])).flat(1);
       console.log(`Nb new achievements to display : ${new_achievements.length}`);
-      if (new_achievements.length > 0) {
-        await Promise.all(globalVariables.Games.map(async game => {
-          try {
-            await game.updateGlobalPercentage();
-            // await game.getAchievementsIcon()
-          } catch (err) {
-            console.error(`Error updating global percentage for game ${game.name}:`, err);
-          }
-        }));
-      }
 
       let guild;
 
