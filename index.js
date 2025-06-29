@@ -147,7 +147,7 @@ client.on(Events.InteractionCreate, async interaction => {
 	}
 
 	try {
-		console.log(`Commande executée : ${interaction.commandName}, ${Date.now()}`)
+		console.log(`Commande executée : ${interaction.commandName}`)
 		await command.execute(interaction, globalVariables);
 	} catch (error) {
 		console.error(`Error executing command ${interaction.commandName}:`, error);

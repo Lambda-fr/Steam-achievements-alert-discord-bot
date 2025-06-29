@@ -11,7 +11,7 @@ class User {
     this.color = color;
     this.avatar;
     this.recentlyPlayedGames = [];
-    this.newAchievements = [] //pour l'affichage
+    this.newAchievements = []
     this.displayedAchievements = []
     this.timePlayedByGame = {}
   }
@@ -42,7 +42,7 @@ class User {
   async getRecentlyPlayedGames(Games) {
     try {
       const response = await fetch(`http://api.steampowered.com/IPlayerService/GetRecentlyPlayedGames/v0001/?key=${API_Steam_key}&steamid=${this.steam_id}&format=json`);
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }

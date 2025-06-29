@@ -6,7 +6,6 @@ import Game from './models/Game.js';
 /**
  * Loads users and games from the JSON DB, and attaches channel info to guilds.
  * Returns [users, games].
- * Not clean: mutates guild objects directly (side effect).
  */
 async function getInfosDB(guilds, client) {
     var users = [];
@@ -70,7 +69,6 @@ async function addGameDB(interaction, gameObject) {
 
 /**
  * Adds or updates a user in the DB.
- * Not clean: allows duplicate guild IDs in Guilds array.
  */
 async function addUserDB(DiscordID, SteamID, DiscordNickname, interaction, color) {
     try {
@@ -136,7 +134,6 @@ async function removePlayerDB(userDiscordId, guildId, nbGuildsUser, interaction)
             delete data.users[userDiscordId]
         }
         else {
-            // Not clean: does not check if Guilds exists or is an array
             data.users[userDiscordId].Guilds = data.users[userDiscordId].Guilds.filter(function (guild) { return guild != guildId })
         }
         writeFileSync(data_path, JSON.stringify(data));
@@ -159,7 +156,6 @@ async function changeColorDB(userDiscordId, color) {
         const jsonData = readFileSync(data_path);
         const data = JSON.parse(jsonData);
         if (!data.users[userDiscordId]) {
-            // Not clean: no feedback to caller if user does not exist
             console.error(`User ${userDiscordId} not found in DB`);
             return;
         }
