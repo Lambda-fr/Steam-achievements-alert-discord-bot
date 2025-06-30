@@ -6,7 +6,7 @@ async function updateAllUsersAchievements(appData) {
   console.log(`lookback :${appData.tLookback}`);
   await Promise.all(appData.users.map(async user => {
     try {
-      await user.getRecentlyPlayedGames(appData.games);
+      await user.updateRecentlyPlayedGamesData(appData.games);
       await Promise.all(user.recentlyPlayedGames.map(async game => {
         try {
           await game.updateAchievementsForUser(user, appData.tLookback, false);

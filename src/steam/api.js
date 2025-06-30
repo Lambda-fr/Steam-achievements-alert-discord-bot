@@ -114,7 +114,7 @@ async function getSchemaForGame(appId) {
 
 async function getOwnedGames(steamId) {
   try {
-    const response = await fetch(`http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key=${API_Steam_key}&steamid=${steamId}&format=json`);
+    const response = await fetch(`http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key=${API_Steam_key}&steamid=${steamId}&format=json&include_appinfo=true`);
     if (!response.ok) {
       throw new Error(`HTTP error! Status: ${response.status} ${response.statusText}`);
     }

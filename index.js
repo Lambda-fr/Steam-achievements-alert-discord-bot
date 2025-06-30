@@ -64,6 +64,9 @@ client.once(Events.ClientReady, async c => {
 		[client.data.users, client.data.games] = await getInfosDB(client.data.guilds, client);
 		await loadAvatars(client.data.users) //to get avatars for each players
 
+		await Promise.all(client.data.users.map(async user => {
+			await user.updateOwnedGamesData()
+		}))
 
 		await Promise.all([await Promise.all(client.data.games.map(async game => {
 			await Promise.all(client.data.users.map(async user => {
@@ -76,9 +79,7 @@ client.once(Events.ClientReady, async c => {
 			}
 		})),
 
-		await Promise.all(client.data.users.map(async user => {
-			await user.getPlaytime()
-		}))
+
 		])
 
 		console.table(client.data.users)

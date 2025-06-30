@@ -14,6 +14,11 @@ class Game {
     }
 
     async updateAchievementsForUser(user, last_scan, start = false, lang) {
+        // Skip if the user does not own this game
+        if (!user.ownedGames.some(game => String(game.id) === this.id)) {
+            console.log(`User ${user.nickname} does not own game ${this.name} (${this.id}). Skipping achievement update.`);
+            return true;
+        }
         try {
             const value = await getPlayerAchievements(this.id, user.steam_id, lang);
             if (!value.playerstats.success) {

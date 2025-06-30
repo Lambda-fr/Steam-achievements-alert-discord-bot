@@ -50,7 +50,7 @@ export async function execute(interaction) {
 		addGameDB(interaction, gameObject);
 
 		interaction.client.data.users.map(async (user) => {
-			await user.getPlaytime(interaction.client.data.games);
+			await user.updateOwnedGamesData();
 			await gameObject.updateAchievementsForUser(user, interaction.client.data.t_lookback);
 		});
 		if (gameObject.realName === '') {

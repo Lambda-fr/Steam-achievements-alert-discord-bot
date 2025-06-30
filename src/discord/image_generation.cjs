@@ -227,8 +227,12 @@ async function displayProgressionBar(interaction, gameObject) {
         const name_display = gameObject.realName === '' ? gameObject.name : gameObject.realName
 
         users_nb_unlocked_not_null.forEach((u) => {
-            if (u[0].timePlayedByGame[gameObject.id] === undefined) {
-                u[0].timePlayedByGame[gameObject.id] = 0
+            const ownedGame = u[0].ownedGames.find(game => String(game.id) === gameObject.id);
+            if (!ownedGame) {
+                console.warn(`Game ${gameObject.id} not found in ownedGames for user ${u[0].nickname}`);
+                u[0].playtimeForCurrentGame = 0; // Fallback
+            } else {
+                u[0].playtimeForCurrentGame = ownedGame.playtime;
             }
         })
 
@@ -240,7 +244,7 @@ async function displayProgressionBar(interaction, gameObject) {
             context.fillStyle = '#ffffff';
             context.fillText("Progress on " + name_display, 25, 35);
 
-            const tps_max = Math.max(...users_nb_unlocked_not_null.map(u => { return u[0].timePlayedByGame[gameObject.id]; }));
+            const tps_max = Math.max(...users_nb_unlocked_not_null.map(u => u[0].playtimeForCurrentGame));
 
             const barLength = 480
 
@@ -251,9 +255,9 @@ async function displayProgressionBar(interaction, gameObject) {
                 context.fillText(`${v[1]}/${gameObject.nbTotal} (${parseInt(100 * v[1] / gameObject.nbTotal)}%)`, 100 + barLength + 10, 71 + n * 70);
                 context.drawImage(black_bar, 100, 58 + n * 70, barLength, 15);
                 context.drawImage(blue_bar, 100, 58 + n * 70, barLength * v[1] / gameObject.nbTotal, 15);
-                context.fillText(`${(v[0].timePlayedByGame[gameObject.id] / 60).toFixed(1)} h`, 100 + barLength + 10, 91 + n * 70);
+                context.fillText(`${(v[0].playtimeForCurrentGame / 60).toFixed(1)} h`, 100 + barLength + 10, 91 + n * 70);
                 context.drawImage(black_bar, 100, 78 + n * 70, barLength, 15);
-                context.drawImage(grey_bar, 100, 78 + n * 70, barLength * v[0].timePlayedByGame[gameObject.id] / tps_max, 15)
+                context.drawImage(grey_bar, 100, 78 + n * 70, barLength * v[0].playtimeForCurrentGame / tps_max, 15)
                 n += 1;
             })
             attachment = new AttachmentBuilder(canvas.toBuffer())
