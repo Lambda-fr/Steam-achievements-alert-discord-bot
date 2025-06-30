@@ -1,5 +1,5 @@
 import { SlashCommandBuilder } from 'discord.js';
-import discordImageFunctions from '../../discord_loadimages.cjs'
+import discordImageFunctions from '../../discord/image_generation.cjs'
 
 export const data = new SlashCommandBuilder()
 	.setName('list_compare_achievements')

@@ -7,7 +7,8 @@ import { Client, Collection, Events, GatewayIntentBits } from 'discord.js';
 import config from './config.json' with { type: 'json' };
 
 import { getInfosDB } from './src/connectAndQueryJSON.js';
-import { loadAvatars, verifyAvatars, listenForNewAchievements } from './src/steam_interface.js';
+import { loadAvatars, verifyAvatars } from './src/steam/api.js';
+import { listenForNewAchievements } from './src/steam/achievement_listener.js';
 import Guild from './src/models/Guild.js';
 
 // Add a timestamp to console logs

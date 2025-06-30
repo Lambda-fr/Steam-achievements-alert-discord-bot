@@ -1,7 +1,7 @@
 import { SlashCommandBuilder } from 'discord.js';
 import { addUserDB } from '../../connectAndQueryJSON.js';
 import User from '../../models/User.js';
-import { loadAvatars, verifyAvatars, isPublicProfile } from '../../steam_interface.js';
+import { loadAvatars, verifyAvatars, isPublicProfile } from '../../steam/api.js';
 
 
 export const data = new SlashCommandBuilder()

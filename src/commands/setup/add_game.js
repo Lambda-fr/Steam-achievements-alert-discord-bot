@@ -1,7 +1,7 @@
 import { SlashCommandBuilder } from 'discord.js';
 import { addGameDB } from '../../connectAndQueryJSON.js';
 import Game from '../../models/Game.js';
-import { isGameIdValid } from '../../steam_interface.js';
+import { isGameIdValid } from '../../steam/api.js';
 
 export const data = new SlashCommandBuilder()
 	.setName('add_game')

@@ -1,9 +1,98 @@
-const { backButton, forwardButton } = require('../assets/buttons');
 const { AttachmentBuilder, EmbedBuilder, ActionRowBuilder } = require('discord.js');
-const { printAtWordWrap } = require('../assets/utils')
+const { ASSETS_PATH } = require('../utils/paths').default;
+const path = require('path');
+const { backButton, forwardButton } = require(path.join(ASSETS_PATH, 'buttons.js'));
+const { printAtWordWrap } = require(path.join(ASSETS_PATH, 'utils.js'))
 const Canvas = require('canvas');
 require('chartjs-adapter-moment')
 const { ChartJSNodeCanvas } = require('chartjs-node-canvas');
+
+const gifs = [
+    "https://tenor.com/view/good-job-clapping-obama-gif-12414317449568226158",
+    "https://tenor.com/view/leonardo-dicaprio-clapping-clap-applause-amazing-gif-16078907558888063471",
+    "https://tenor.com/view/congrats-fireworks-gif-6260073604780267354",
+    "https://tenor.com/view/toast-fireworks-celebration-leonardo-di-caprio-cheers-gif-15086880",
+    "https://tenor.com/view/confetti-style-gif-19616552",
+    "https://tenor.com/view/mrandmissjackson-ariana-grande-michael-jackson-gif-20951576"
+];
+
+async function displayNewAchievementImage(achievement, users, guild, author, position) {
+    try {
+        Canvas.registerFont(path.join(ASSETS_PATH, 'OpenSans-VariableFont_wdth,wght.ttf'), { family: 'Open Sans Regular' })
+        const canvas = Canvas.createCanvas(700, 190);
+        const context = canvas.getContext('2d');
+        var attachment;
+        await Promise.all([
+            Canvas.loadImage(path.join(ASSETS_PATH, 'background.jpg'))
+                .then(img => {
+                    context.drawImage(img, 0, 0);
+                })
+                .catch(err => {
+                    console.error("Error loading background image:", err);
+                }),
+            Canvas.loadImage(achievement.icon)
+                .then(img => {
+                    context.drawImage(img, 25, 25, 100, 100);
+                })
+                .catch(err => {
+                    console.error("Error loading icon image:", err);
+                })
+        ])
+        const decal = 160
+        if (author.avatar) {
+            context.drawImage(author.avatar, decal, 140, 32, 32);
+        } else {
+            console.warn("Missing author.avatar");
+        }
+
+        const players = Object.keys(achievement.playersUnlockTime);
+        var playerObject;
+        var index = 0;
+        for (const player of players) {
+            playerObject = users.find(u => u.steam_id === player)
+            //if it's not the user who triggered the achievement, if he unlocked it, and if he's in the guild user list
+            if (
+                player != author.steam_id &&
+                achievement.playersUnlockTime[player] != 0 &&
+                playerObject &&
+                playerObject.guilds.includes(guild.id)
+            ) {
+                if (playerObject.avatar) {
+                    context.drawImage(playerObject.avatar, decal + 40 * (index + 1), 140, 32, 32);
+                } else {
+                    console.warn(`Missing avatar for player ${player}`);
+                }
+                index = index + 1;
+            }
+        }
+        context.font = '30px "Open Sans Regular"';
+        context.fillStyle = '#ffffff';
+        context.fillText(achievement.achievementName, 150, 45);
+
+        context.font = '20px "Open Sans Regular"';
+        context.fillStyle = '#bfbfbf';
+        printAtWordWrap(context, achievement.achievementDescription, 150, 72, 20, 525)
+
+        context.font = '22px "Open Sans Regular"';
+        context.fillStyle = '#ffffff';
+        const txt2_1 = "Unlocked by ";
+        const txt2_2 = "and by " + (achievement.globalPercentage ?? 0) + "% of players.";
+        context.fillText(txt2_1, 25, 165);
+        context.fillText(txt2_2, decal + (index + 1) * 40, 165);
+
+        attachment = new AttachmentBuilder(canvas.toBuffer())
+        const unlock_order = achievement.game.nbUnlocked[author.steam_id].nbUnlocked - position
+        const unlock_rate = unlock_order / achievement.game.nbTotal * 100;
+        const game_finished = unlock_order === achievement.game.nbTotal
+        await guild.channel.send({ content: `${game_finished ? '🎉' : ''} <@${author.discord_id}> unlocked an achievement on ${achievement.game.realName}. Progress : (${unlock_order}/${achievement.game.nbTotal}) [${unlock_rate.toFixed(2)}%] ${game_finished ? '🎉' : ''}`, files: [attachment] })
+        if (game_finished) {
+            guild.channel.send(gifs[Math.floor(Math.random() * gifs.length)])
+        }
+    }
+    catch (err) {
+        console.error(`Error displaying new achievement for ${author.nickname} (${author.steam_id}) in game ${achievement.game.realName}:`, err);
+    }
+}
 
 async function displayAchievementsHistory(interaction, all_timestamps, datasets, realName) {
     delete require.cache[require.resolve('chartjs-adapter-moment')]
@@ -111,11 +200,15 @@ async function displayProgressionBar(interaction, gameObject) {
         var black_bar
         var blue_bar
         var grey_bar
-        [background, blue_bar, black_bar, grey_bar] = await Promise.all([Canvas.loadImage('./assets/background.jpg'), Canvas.loadImage('./assets/blue_progress_bar.png'),
-        Canvas.loadImage('./assets/black_progress_bar.png'), Canvas.loadImage('./assets/grey_progress_bar.png')])
+        [background, blue_bar, black_bar, grey_bar] = await Promise.all([
+            Canvas.loadImage(path.join(ASSETS_PATH, 'background.jpg')),
+            Canvas.loadImage(path.join(ASSETS_PATH, 'blue_progress_bar.png')),
+            Canvas.loadImage(path.join(ASSETS_PATH, 'black_progress_bar.png')),
+            Canvas.loadImage(path.join(ASSETS_PATH, 'grey_progress_bar.png'))
+        ])
 
         var users_nb_unlocked_not_null = Object.entries(gameObject.nbUnlocked).filter(([k, v]) => v.nbUnlocked !== 0 && v.user.guilds.includes(interaction.guildId))
-        Canvas.registerFont('./assets/OpenSans-VariableFont_wdth,wght.ttf', { family: 'Open Sans Regular' })
+        Canvas.registerFont(path.join(ASSETS_PATH, 'OpenSans-VariableFont_wdth,wght.ttf'), { family: 'Open Sans Regular' })
         const canvas = Canvas.createCanvas(700, 115 + (users_nb_unlocked_not_null.length - 1) * 70);
         const context = canvas.getContext('2d');
         var attachment;
@@ -174,7 +267,7 @@ async function displayProgressionBar(interaction, gameObject) {
 }
 async function displayAchievementsList(achievements_locked, interaction, canvas_title) {
     const MAX_PAGE = 5
-    const background = await Canvas.loadImage('./assets/background.jpg')
+    const background = await Canvas.loadImage(path.join(ASSETS_PATH, 'background.jpg'))
     if (achievements_locked.length === 0) {
         return
     }
@@ -264,5 +357,6 @@ async function displayAchievementsList(achievements_locked, interaction, canvas_
 module.exports = {
     displayAchievementsHistory,
     displayProgressionBar,
-    displayAchievementsList
+    displayAchievementsList,
+    displayNewAchievementImage
 };
