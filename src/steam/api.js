@@ -37,33 +37,24 @@ async function loadAvatars(users) {
       console.error("Malformed response from Steam API");
       return;
     }
-    await Promise.all(value.response.players.map(async (_user) => {
-      try {
-        const img = await loadImage(_user.avatarfull);
-        const foundUser = users.find(user => user.steam_id === _user.steamid);
-        if (foundUser) {
-          foundUser.avatar = img;
-          console.log(`Avatar updated for ${foundUser.nickname}`);
-        } else {
-          console.warn(`User with steamid ${_user.steamid} not found in users array`);
+    await Promise.all(users.map(async user => {
+      const _user = value.response.players.find(p => p.steamid === user.steam_id);
+      if (_user) {
+        try {
+          user.avatar = await loadImage(_user.avatarfull);
+          console.log(`Avatar updated for ${user.nickname}`);
+        } catch (err) {
+          console.warn(`Error loading avatar image for steamid ${user.steam_id}. Loading default avatar.`, err);
+          user.avatar = await loadImage('https://cdn.discordapp.com/embed/avatars/0.png');
         }
-      } catch (err) {
-        console.error(`Error loading avatar image for steamid ${_user.steamid}:`, err);
+      } else {
+        console.warn(`User with steamid ${user.steam_id} not found in Steam API response. Loading default avatar.`);
+        user.avatar = await loadImage('https://cdn.discordapp.com/embed/avatars/0.png');
       }
     }));
   } catch (err) {
     console.error("Error in getAvatars:", err);
   }
-}
-
-async function verifyAvatars(users) {
-  // Verify if avatars are loaded for all users, and load default avatar if not
-  await Promise.all(users.map(async user => {
-    if (typeof user.avatar === 'undefined') {
-      console.warn(`Avatar not found for user ${user.nickname}. Loading default avatar.`);
-      user.avatar = await loadImage('https://cdn.discordapp.com/embed/avatars/0.png');
-    }
-  }));
 }
 
 async function isGameIdValid(game_id) {
@@ -147,4 +138,4 @@ async function getRecentlyPlayedGames(steamId) {
   }
 }
 
-export { loadAvatars, verifyAvatars, isPublicProfile, isGameIdValid, getPlayerAchievements, getGlobalAchievementPercentagesForApp, getSchemaForGame, getOwnedGames, getRecentlyPlayedGames };
+export { loadAvatars, isPublicProfile, isGameIdValid, getPlayerAchievements, getGlobalAchievementPercentagesForApp, getSchemaForGame, getOwnedGames, getRecentlyPlayedGames };

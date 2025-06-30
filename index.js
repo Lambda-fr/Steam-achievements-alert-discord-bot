@@ -7,7 +7,7 @@ import { Client, Collection, Events, GatewayIntentBits } from 'discord.js';
 import config from './config.json' with { type: 'json' };
 
 import { getInfosDB } from './src/connectAndQueryJSON.js';
-import { loadAvatars, verifyAvatars } from './src/steam/api.js';
+import { loadAvatars } from './src/steam/api.js';
 import { listenForNewAchievements } from './src/steam/achievement_listener.js';
 import Guild from './src/models/Guild.js';
 
@@ -63,7 +63,7 @@ client.once(Events.ClientReady, async c => {
 		client.data.guilds = client.guilds.cache.map(guild => new Guild(guild.id));
 		[client.data.users, client.data.games] = await getInfosDB(client.data.guilds, client);
 		await loadAvatars(client.data.users) //to get avatars for each players
-		await verifyAvatars(client.data.users) //to load default avatars for users without avatar
+
 
 		await Promise.all([await Promise.all(client.data.games.map(async game => {
 			await Promise.all(client.data.users.map(async user => {

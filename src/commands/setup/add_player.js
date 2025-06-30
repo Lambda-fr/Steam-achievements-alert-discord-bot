@@ -1,7 +1,7 @@
 import { SlashCommandBuilder } from 'discord.js';
 import { addUserDB } from '../../connectAndQueryJSON.js';
 import User from '../../models/User.js';
-import { loadAvatars, verifyAvatars, isPublicProfile } from '../../steam/api.js';
+import { loadAvatars, isPublicProfile } from '../../steam/api.js';
 
 
 export const data = new SlashCommandBuilder()
@@ -64,9 +64,8 @@ export async function execute(interaction) {
 	addUserDB(discord_id, steam_id, nickname, interaction, color)
 		.then(async () => {
 			var userObject = interaction.client.data.users.find(user => user.discord_id === discord_id);
-			await getAvatars([userObject]);
-			await verifyAvatars([userObject]);
+			await loadAvatars([userObject]);
 			userObject.getPlaytime(interaction.client.data.games);
-			interaction.client.data.games.map(game => game.updateAchievements(userObject, interaction.client.data.t_lookback));
+			interaction.client.data.games.map(game => game.updateAchievementsForUser(userObject, interaction.client.data.t_lookback));
 		});
 }
