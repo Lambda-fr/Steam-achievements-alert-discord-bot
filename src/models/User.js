@@ -50,10 +50,12 @@ class User {
         });
       }));
 
-      console.log(`Games playtime and achievement status updated for ${this.nickname} (${this.steam_id})`);
+      console.log(`Owned games, game playtime, and achievement status updated for ${this.nickname} (${this.steam_id})`);
+      return true;
 
     } catch (err) {
-      console.error(`Error fetching games playtime for ${this.steam_id}, ${this.nickname} : ${err.message || err}`);
+      console.error(`Error fetching owned games, game playtime, and achievement status for ${this.steam_id}, ${this.nickname} : ${err.message || err}`);
+      return false;
     }
 
   }
