@@ -362,9 +362,10 @@ async function displayAchievementsList(achievements_locked, interaction, canvas_
 }
 
 async function displayLeaderboard(interaction, leaderboardData) {
-    try {
+    const MAX_PLAYERS_PER_PAGE = 5;
+    const background = await Canvas.loadImage(path.join(ASSETS_PATH, 'background.jpg'));
+    async function get_leaderboard_image(players_fraction, startRank) {
         Canvas.registerFont(path.join(ASSETS_PATH, 'OpenSans-VariableFont_wdth,wght.ttf'), { family: 'Open Sans Regular' });
-        const background = await Canvas.loadImage(path.join(ASSETS_PATH, 'background.jpg'));
 
         const avatarHeight = 50;
         const avatarYPadding = 25;
@@ -377,8 +378,8 @@ async function displayLeaderboard(interaction, leaderboardData) {
         let calculatedTotalHeight = 48; // For title and initial padding
         let usersYPositions = []; // Y position for the top of the current player's avatar
         usersYPositions.push(calculatedTotalHeight); // Start with the first player's position
-        for (let i = 0; i < leaderboardData.length; i++) {
-            const entry = leaderboardData[i];
+        for (let i = 0; i < players_fraction.length; i++) {
+            const entry = players_fraction[i];
             if (i !== 0) {
                 usersYPositions.push(calculatedTotalHeight);
             }
@@ -405,16 +406,16 @@ async function displayLeaderboard(interaction, leaderboardData) {
 
 
 
-        for (let i = 0; i < leaderboardData.length; i++) {
+        for (let i = 0; i < players_fraction.length; i++) {
             let currentYPosition = usersYPositions[i];
-            const entry = leaderboardData[i];
+            const entry = players_fraction[i];
             const user = entry.user;
             const numberOfCompletedGames = entry.completedGames.length;
 
             // Rank
             context.font = '15px "Open Sans Regular"';
             context.fillStyle = '#ffffff';
-            context.fillText(`#${i + 1}`, 25, currentYPosition + (avatarHeight / 2)); // Centered vertically with avatar
+            context.fillText(`#${startRank + i}`, 25, currentYPosition + (avatarHeight / 2)); // Centered vertically with avatar
 
             // Avatar
             if (user.avatar) {
@@ -465,13 +466,45 @@ async function displayLeaderboard(interaction, leaderboardData) {
 
         }
 
-        const attachment = new AttachmentBuilder(canvas.toBuffer(), 'leaderboard.png');
-        await interaction.editReply({ files: [attachment] });
-
-    } catch (err) {
-        console.error('Error displaying leaderboard:', err);
-        await interaction.editReply('There was an error generating the leaderboard.');
+        return new AttachmentBuilder(canvas.toBuffer(), 'leaderboard.png');
     }
+
+    const canFitOnOnePage = leaderboardData.length <= MAX_PLAYERS_PER_PAGE;
+    const slice_players = leaderboardData.slice(0, MAX_PLAYERS_PER_PAGE);
+    const img_first = await get_leaderboard_image(slice_players, 1);
+
+    const embedMessage = await interaction.editReply({
+        embeds: [new EmbedBuilder().setTitle(`Leaderboard - Showing players ${1}-${slice_players.length} out of ${leaderboardData.length}`)],
+        files: [img_first],
+        components: canFitOnOnePage
+            ? []
+            : [new ActionRowBuilder({ components: [forwardButton] })]
+    });
+
+    if (canFitOnOnePage) return;
+
+    const collector = embedMessage.createMessageComponentCollector({ time: 172800000 });
+
+    let currentIndex = 0;
+    collector.on('collect', async interaction => {
+        interaction.customId === backButton.data.custom_id ? (currentIndex = currentIndex - MAX_PLAYERS_PER_PAGE) : (currentIndex = currentIndex + MAX_PLAYERS_PER_PAGE);
+
+        const slice_players = leaderboardData.slice(currentIndex, currentIndex + MAX_PLAYERS_PER_PAGE);
+        const img = await get_leaderboard_image(slice_players, currentIndex + 1);
+
+        await interaction.update({
+            embeds: [new EmbedBuilder().setTitle(`Leaderboard - Showing players ${currentIndex + 1}-${currentIndex + slice_players.length} out of ${leaderboardData.length}`)],
+            files: [img],
+            components: [
+                new ActionRowBuilder({
+                    components: [
+                        ...(currentIndex ? [backButton] : []),
+                        ...(currentIndex + MAX_PLAYERS_PER_PAGE < leaderboardData.length ? [forwardButton] : [])
+                    ]
+                })
+            ]
+        });
+    });
 }
 
 module.exports = {
