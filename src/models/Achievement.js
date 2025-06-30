@@ -1,4 +1,4 @@
-import displayNewAchievementImage from '../discord/image_generation.cjs';
+import discordImageFunctions from '../discord/image_generation.cjs';
 
 class Achievement {
     constructor(game, achievementId, achievementName, achievementDescription) {
@@ -12,7 +12,7 @@ class Achievement {
     }
 
     async displayDiscordNewAchievement(users, guild, author, position) {
-        await displayNewAchievementImage(this, users, guild, author, position);
+        await discordImageFunctions.displayNewAchievementImage(this, users, guild, author, position);
     }
 }
 

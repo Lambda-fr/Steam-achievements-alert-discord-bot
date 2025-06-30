@@ -1,6 +1,4 @@
-import fetch from 'node-fetch';
-import config from '../../config.json' with { type: 'json' };
-const { API_Steam_key, lang } = config;
+import { getPlayerAchievements, getGlobalAchievementPercentagesForApp, getSchemaForGame } from '../steam/api.js';
 import Achievement from './Achievement.js';
 
 class Game {
@@ -15,14 +13,14 @@ class Game {
         this.nbTotal = 0;
     }
 
-    async updateAchievementsForUser(user, last_scan, start = false) {
+    async updateAchievementsForUser(user, last_scan, start = false, lang) {
         try {
-            const res = await fetch(`http://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v0001/?appid=${this.id}&key=${API_Steam_key}&steamid=${user.steam_id}&l=${lang}`);
-            if (!res.ok) {
-                throw new Error(`${user.nickname} : error on ${this.name} (HTTP ${res.status})`);
-            }
-            const value = await res.json();
+            const value = await getPlayerAchievements(this.id, user.steam_id, lang);
             if (!value.playerstats.success) {
+                if (value.playerstats.error === "Requested app has no stats") {
+                    console.log(`User ${user.nickname} doesn't own this game. Skipping.`);
+                    return true;
+                }
                 throw new Error(`${user.nickname} profile is not public`);
             }
             if (!value.playerstats.hasOwnProperty("achievements")) {
@@ -74,9 +72,7 @@ class Game {
     async updateGlobalPercentage() {
         const id = this.id;
         try {
-            const res = await fetch(`http://api.steampowered.com/ISteamUserStats/GetGlobalAchievementPercentagesForApp/v0002/?gameid=${id}&format=json`);
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const value = await res.json();
+            const value = await getGlobalAchievementPercentagesForApp(id);
             for (const a of value.achievementpercentages.achievements) {
                 if (this.achievements[a.name]) {
                     this.achievements[a.name].globalPercentage = parseFloat(a.percent).toFixed(1);
@@ -93,9 +89,7 @@ class Game {
         const id = this.id;
         const name = this.name;
         try {
-            const res = await fetch(`http://api.steampowered.com/ISteamUserStats/GetSchemaForGame/v2/?appid=${id}&key=${API_Steam_key}`);
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const value = await res.json();
+            const value = await getSchemaForGame(id);
             if (!value.game?.availableGameStats?.achievements) {
                 throw new Error('No achievements found in schema');
             }
@@ -115,9 +109,7 @@ class Game {
         const id = this.id;
         const name = this.name;
         try {
-            const res = await fetch(`http://api.steampowered.com/ISteamUserStats/GetSchemaForGame/v2/?appid=${id}&key=${API_Steam_key}`);
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const value = await res.json();
+            const value = await getSchemaForGame(id);
             if (value.game?.gameName) {
                 this.realName = value.game.gameName;
             }

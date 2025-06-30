@@ -68,7 +68,7 @@ client.once(Events.ClientReady, async c => {
 		await Promise.all([await Promise.all(client.data.games.map(async game => {
 			await Promise.all(client.data.users.map(async user => {
 				{
-					await game.updateAchievementsForUser(user, client.data.tLookback, true)
+					await game.updateAchievementsForUser(user, client.data.tLookback, true, config.lang)
 				}
 			}))
 			if (game.realName == '') {

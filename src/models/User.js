@@ -1,6 +1,4 @@
-import config from '../../config.json' with { type: 'json' };
-const { API_Steam_key } = config;
-import fetch from 'node-fetch';
+import { getOwnedGames, getRecentlyPlayedGames } from '../steam/api.js';
 
 class User {
   constructor(steam_id, discord_id, nickname, guilds, color) {
@@ -17,11 +15,7 @@ class User {
   }
   async getPlaytime() {
     try {
-      const response = await fetch(`http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key=${API_Steam_key}&steamid=${this.steam_id}&format=json`);
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status} ${response.statusText}`);
-      }
-      const value = await response.json();
+      const value = await getOwnedGames(this.steam_id);
       if (!value?.response?.games) {
         throw new Error("Response empty");
       }
@@ -39,13 +33,7 @@ class User {
 
   async getRecentlyPlayedGames(Games) {
     try {
-      const response = await fetch(`http://api.steampowered.com/IPlayerService/GetRecentlyPlayedGames/v0001/?key=${API_Steam_key}&steamid=${this.steam_id}&format=json`);
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-
-      const value = await response.json();
+      const value = await getRecentlyPlayedGames(this.steam_id);
       this.recentlyPlayedGames = [];
 
       if (value.response && value.response.total_count > 0) {

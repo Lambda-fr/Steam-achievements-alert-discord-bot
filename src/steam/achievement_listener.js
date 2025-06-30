@@ -1,5 +1,4 @@
-import config from '../../config.json' with { type: 'json' };
-const { API_Steam_key } = config;
+
 
 async function updateAllUsersAchievements(appData) {
   console.log(`Games list : ${appData.games.map(game => game.name)}`);

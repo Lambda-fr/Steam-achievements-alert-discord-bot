@@ -85,4 +85,66 @@ async function isGameIdValid(game_id) {
   }
 }
 
-export { loadAvatars, verifyAvatars, isPublicProfile, isGameIdValid };
+async function getPlayerAchievements(appId, steamId, lang) {
+  try {
+    const res = await fetch(`http://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v0001/?appid=${appId}&key=${API_Steam_key}&steamid=${steamId}&l=${lang}`);
+    return await res.json();
+  } catch (err) {
+    console.error(`Error in getPlayerAchievements for appId ${appId}, steamId ${steamId}:`, err);
+    throw err;
+  }
+}
+
+async function getGlobalAchievementPercentagesForApp(gameId) {
+  try {
+    const res = await fetch(`http://api.steampowered.com/ISteamUserStats/GetGlobalAchievementPercentagesForApp/v0002/?gameid=${gameId}&format=json`);
+    if (!res.ok) {
+      throw new Error(`Error fetching global achievement percentages (HTTP ${res.status})`);
+    }
+    return await res.json();
+  } catch (err) {
+    console.error(`Error in getGlobalAchievementPercentagesForApp for gameId ${gameId}:`, err);
+    throw err;
+  }
+}
+
+async function getSchemaForGame(appId) {
+  try {
+    const res = await fetch(`http://api.steampowered.com/ISteamUserStats/GetSchemaForGame/v2/?appid=${appId}&key=${API_Steam_key}`);
+    if (!res.ok) {
+      throw new Error(`Error fetching game schema (HTTP ${res.status})`);
+    }
+    return await res.json();
+  } catch (err) {
+    console.error(`Error in getSchemaForGame for appId ${appId}:`, err);
+    throw err;
+  }
+}
+
+async function getOwnedGames(steamId) {
+  try {
+    const response = await fetch(`http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key=${API_Steam_key}&steamid=${steamId}&format=json`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status} ${response.statusText}`);
+    }
+    return await response.json();
+  } catch (err) {
+    console.error(`Error fetching owned games for steamId ${steamId}:`, err.message || err);
+    throw err;
+  }
+}
+
+async function getRecentlyPlayedGames(steamId) {
+  try {
+    const response = await fetch(`http://api.steampowered.com/IPlayerService/GetRecentlyPlayedGames/v0001/?key=${API_Steam_key}&steamid=${steamId}&format=json`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+    return await response.json();
+  } catch (err) {
+    console.error(`Error fetching recently played games for steamId ${steamId}:`, err.message || err);
+    throw err;
+  }
+}
+
+export { loadAvatars, verifyAvatars, isPublicProfile, isGameIdValid, getPlayerAchievements, getGlobalAchievementPercentagesForApp, getSchemaForGame, getOwnedGames, getRecentlyPlayedGames };
