@@ -19,7 +19,7 @@ class Game {
             const value = await getPlayerAchievements(this.id, user.steam_id, lang);
             if (!value.playerstats.success) {
                 if (value.playerstats.error === "Requested app has no stats") {
-                    console.log(`User ${user.nickname} doesn't own this game. Skipping.`);
+                    //User doesn't own this game. Skipping
                     return true;
                 }
                 throw new Error(`${user.nickname} profile is not public`);
