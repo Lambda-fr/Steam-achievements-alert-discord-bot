@@ -29,10 +29,10 @@ const defaultData = {
 }
 
 const defaultConfig = {
-	API_Steam_key: "",
-	clientId: "",
-	guildId: "",
-	discord_token: "",
+	API_Steam_key: "YOUR_STEAM_API_KEY",
+	clientId: "YOUR_CLIENT_ID",
+	guildId: ["YOUR_GUILD_ID_1", "YOUR_GUILD_ID_2"],
+	discord_token: "YOUR_DISCORD_TOKEN",
 	lang: "english"
 }
 
@@ -56,10 +56,13 @@ if (!checkIfFileExists(filePath)) {
 import config from './config.json' with { type: 'json' };
 
 const { clientId, guildId, discord_token } = config;
-if (clientId === "" || guildId === "" || discord_token === "") {
+if (clientId === "" || discord_token === "") {
 	exitWithError('Please fill ./config.json');
 }
 
+if (!Array.isArray(guildId) || guildId.length === 0) {
+	exitWithError('Please provide at least one guildId in ./config.json as an array.');
+}
 
 const commands = [];
 const foldersPath = join(process.cwd(), 'src/commands');
@@ -104,11 +107,16 @@ const rest = new REST().setToken(discord_token);
 (async () => {
 	try {
 		console.log(`Started refreshing ${commands.length} application (/) commands.`);
-		const data = await rest.put(
-			Routes.applicationGuildCommands(clientId, guildId),
-			{ body: commands },
-		);
-		console.log(`Successfully reloaded ${data.length} application (/) commands.`);
+
+		for (const gId of guildId) {
+			console.log(`Deploying commands to guild: ${gId}`);
+			const data = await rest.put(
+				Routes.applicationGuildCommands(clientId, gId),
+				{ body: commands },
+			);
+			console.log(`Successfully reloaded ${data.length} application (/) commands for guild ${gId}.`);
+		}
+
 		console.log(`Commands loaded: ${totalCommands}, failed: ${failedCommands}`);
 	} catch (error) {
 		exitWithError('Failed to deploy commands', error);
