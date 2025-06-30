@@ -10,7 +10,7 @@ export const data = new SlashCommandBuilder()
     .addStringOption(option => option.setName('color')
         .setDescription('the color (format : #FFFFFF)')
         .setRequired(true));
-export async function execute(interaction, globalVariables) {
+export async function execute(interaction) {
     const discord_id = interaction.options.getUser('player_mention').id;
     const color = interaction.options.getString('color');
 
@@ -19,7 +19,7 @@ export async function execute(interaction, globalVariables) {
         await interaction.reply('Wrong color code. Please use format : #FFFFFF');
         return;
     }
-    var userObject = globalVariables.Users.find(user => user.discord_id === discord_id);
+    var userObject = interaction.client.data.users.find(user => user.discord_id === discord_id);
 
     try {
         if (userObject) {

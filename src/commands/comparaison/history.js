@@ -7,9 +7,9 @@ export const data = new SlashCommandBuilder()
     .addStringOption(option => option.setName('game_name')
         .setDescription('name of the game as you specified it (do /list_games)')
         .setRequired(true));
-export async function execute(interaction, globalVariables) {
+export async function execute(interaction) {
     const game_name = interaction.options.getString('game_name');
-    const gameObject = globalVariables.Games.find(game => game.name === game_name || game.aliases.includes(game_name));
+    const gameObject = interaction.client.data.games.find(game => game.name === game_name || game.aliases.includes(game_name));
     if (typeof gameObject === 'undefined') {
         await interaction.reply('Game not found!');
         return;
@@ -19,7 +19,7 @@ export async function execute(interaction, globalVariables) {
         return;
     }
 
-    let [all_timestamps, datasets, gameRealName] = gameObject.getAchievementsHistory(interaction);
+    let [all_timestamps, datasets, gameRealName] = gameObject.getAchievementsHistory(interaction.guildId);
     discordImageFunctions.displayAchievementsHistory(interaction, all_timestamps, datasets, gameRealName);
 
 }

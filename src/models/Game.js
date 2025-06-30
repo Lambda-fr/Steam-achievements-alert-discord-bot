@@ -128,7 +128,7 @@ class Game {
         return true;
     }
 
-    getCompareAchievements(userAuthor, users_vs, interaction) {
+    getCompareAchievements(userAuthor, users_vs) {
         var validAchievements = Object.entries(this.achievements).map(([a_id, a]) => {
             if (a.playersUnlockTime[userAuthor.steam_id] === 0) {
                 const playersWhoUnlocked = Object.entries(a.playersUnlockTime).map(([u, unlocked_time]) => {
@@ -149,13 +149,13 @@ class Game {
         return validAchievements
     }
 
-    getLockedAchievements(userAuthor, interaction, globalVariables, other_users) {
+    getLockedAchievements(userAuthor, guildId, usersData, other_users) {
         var validAchievements = Object.entries(this.achievements).map(([a_id, a]) => {
             if (a.playersUnlockTime[userAuthor.steam_id] === 0 || other_users.filter(u => a.playersUnlockTime[u.steam_id] === 0).length > 0) {
                 const playersWhoUnlocked = Object.entries(a.playersUnlockTime).map(([u, unlocked_time]) => {
-                    const userObject = globalVariables.Users.find(_u => _u.steam_id === u)
-                    if (unlocked_time != 0 && userObject.guilds.includes(interaction.guildId)) {
-                        return globalVariables.Users.find(_u => _u.steam_id === u)
+                    const userObject = usersData.find(_u => _u.steam_id === u)
+                    if (unlocked_time != 0 && userObject.guilds.includes(guildId)) {
+                        return usersData.find(_u => _u.steam_id === u)
                     }
                 }).filter(notUndefined => notUndefined !== undefined);
                 return { object: a, playersWhoUnlocked: playersWhoUnlocked }
@@ -165,12 +165,12 @@ class Game {
         return validAchievements
     }
 
-    getAllAchievements(interaction, globalVariables) {
+    getAllAchievements(guildId, usersData) {
         var validAchievements = Object.entries(this.achievements).map(([a_id, a]) => {
             const playersWhoUnlocked = Object.entries(a.playersUnlockTime).map(([u, unlocked_time]) => {
-                const userObject = globalVariables.Users.find(_u => _u.steam_id === u)
-                if (unlocked_time != 0 && userObject.guilds.includes(interaction.guildId)) {
-                    return globalVariables.Users.find(_u => _u.steam_id === u)
+                const userObject = usersData.find(_u => _u.steam_id === u)
+                if (unlocked_time != 0 && userObject.guilds.includes(guildId)) {
+                    return usersData.find(_u => _u.steam_id === u)
                 }
             }).filter(notUndefined => notUndefined !== undefined);
             return { object: a, playersWhoUnlocked: playersWhoUnlocked }
@@ -180,7 +180,7 @@ class Game {
         return validAchievements
     }
 
-    getAchievementsHistory(interaction) {
+    getAchievementsHistory(guildId) {
         try {
             let timestamp_history = {} //Dict with list of timestamps of achievements unlock time for each player(key)
             let all_timestamps = []
@@ -188,7 +188,7 @@ class Game {
 
             let nbAchievementsList = {}
             Object.keys(this.nbUnlocked).forEach(userSteamID => {
-                if (this.nbUnlocked[userSteamID].user.guilds.includes(interaction.guildId)) {
+                if (this.nbUnlocked[userSteamID].user.guilds.includes(guildId)) {
                     timestamp_history[userSteamID] = []
                     nbAchievementsList[userSteamID] = []
                     guild_users.push(userSteamID)

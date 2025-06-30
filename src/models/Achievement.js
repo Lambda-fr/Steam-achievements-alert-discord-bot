@@ -22,7 +22,7 @@ class Achievement {
         this.icon
     }
 
-    async displayDiscordNewAchievement(Users, guild, author, position) {
+    async displayDiscordNewAchievement(users, guild, author, position) {
         try {
             registerFont('./assets/OpenSans-VariableFont_wdth,wght.ttf', { family: 'Open Sans Regular' })
             const canvas = createCanvas(700, 190);
@@ -55,7 +55,7 @@ class Achievement {
             var playerObject;
             var index = 0;
             for (const player of players) {
-                playerObject = Users.find(u => u.steam_id === player)
+                playerObject = users.find(u => u.steam_id === player)
                 //if it's not the user who triggered the achievement, if he unlocked it, and if he's in the guild user list
                 if (
                     player != author.steam_id &&

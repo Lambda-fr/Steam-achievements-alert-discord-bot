@@ -7,9 +7,9 @@ export const data = new SlashCommandBuilder()
 	.addStringOption(option => option.setName('game_name')
 		.setDescription('name of the game as you specified it (do /list_games)')
 		.setRequired(true));
-export async function execute(interaction, globalVariables) {
+export async function execute(interaction) {
 	const game_name = interaction.options.getString('game_name');
-	const gameObject = globalVariables.Games.find(game => game.name === game_name || game.aliases.includes(game_name));
+	const gameObject = interaction.client.data.games.find(game => game.name === game_name || game.aliases.includes(game_name));
 	if (typeof gameObject === 'undefined') {
 		await interaction.reply('Game not found!');
 		return;
@@ -21,7 +21,7 @@ export async function execute(interaction, globalVariables) {
 
 	await gameObject.updateGlobalPercentage();
 	discordImageFunctions.displayProgressionBar(interaction, gameObject);
-	let validAchievements = gameObject.getAllAchievements(interaction, globalVariables);
+	let validAchievements = gameObject.getAllAchievements(interaction.guildId, interaction.client.data.users);
 	const canvas_title = `All achievements`
 	const canvas_title2 = `all`
 	discordImageFunctions.displayAchievementsList(validAchievements, interaction, [canvas_title, canvas_title2])

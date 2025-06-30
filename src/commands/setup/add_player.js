@@ -16,7 +16,7 @@ export const data = new SlashCommandBuilder()
 	.addStringOption(option => option.setName('nickname')
 		.setDescription('the nickname you want to set for this player')
 		.setRequired(true));
-export async function execute(interaction, globalVariables) {
+export async function execute(interaction) {
 	const discord_id = interaction.options.getUser('player_mention').id;
 	const steam_id = interaction.options.getString('steam_user_id');
 	const nickname = interaction.options.getString('nickname');
@@ -35,7 +35,7 @@ export async function execute(interaction, globalVariables) {
 		}
 		return;
 	}
-	for (var user of globalVariables.Users) {
+	for (var user of interaction.client.data.users) {
 		if (user.discord_id === discord_id) {
 			is_new_player = false;
 			if (user.steam_id != steam_id) {
@@ -59,14 +59,14 @@ export async function execute(interaction, globalVariables) {
 	const color = '#' + Math.floor(Math.random() * 16777215).toString(16);
 	console.log(color);
 	if (is_new_player) {
-		globalVariables.Users.push(new User(steam_id, discord_id, nickname, [interaction.guildId], color));
+		interaction.client.data.users.push(new User(steam_id, discord_id, nickname, [interaction.guildId], color));
 	}
 	addUserDB(discord_id, steam_id, nickname, interaction, color)
 		.then(async () => {
-			var userObject = globalVariables.Users.find(user => user.discord_id === discord_id);
+			var userObject = interaction.client.data.users.find(user => user.discord_id === discord_id);
 			await getAvatars([userObject]);
 			await verifyAvatars([userObject]);
-			userObject.getPlaytime(globalVariables.Games);
-			globalVariables.Games.map(game => game.updateAchievements(userObject, globalVariables.t_lookback));
+			userObject.getPlaytime(interaction.client.data.games);
+			interaction.client.data.games.map(game => game.updateAchievements(userObject, interaction.client.data.t_lookback));
 		});
 }

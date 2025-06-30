@@ -33,8 +33,8 @@ function list_games(guildId, games) {
 export const data = new SlashCommandBuilder()
 	.setName('list_games')
 	.setDescription('Lists the games the bot listens to for new achievements');
-export async function execute(interaction, globalVariables) {
-	const messages = list_games(interaction.guildId, globalVariables.Games);
+export async function execute(interaction) {
+	const messages = list_games(interaction.guildId, interaction.client.data.games);
 	for (let i = 0; i < messages.length; i++) {
 		if (i == 0) {
 			await interaction.reply(`Games I listen to for new achievements :${messages[i]}`);

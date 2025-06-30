@@ -21,6 +21,6 @@ function list_players(guildId, users) {
 export const data = new SlashCommandBuilder()
 	.setName('list_players')
 	.setDescription('Lists the players the bot listens to for new achievements');
-export async function execute(interaction, globalVariables) {
-	await interaction.reply(list_players(interaction.guildId, globalVariables.Users));
+export async function execute(interaction) {
+	await interaction.reply(list_players(interaction.guildId, interaction.client.data.users));
 }

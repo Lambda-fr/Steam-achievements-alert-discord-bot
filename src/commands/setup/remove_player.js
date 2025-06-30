@@ -7,10 +7,10 @@ export const data = new SlashCommandBuilder()
 	.addUserOption(option => option.setName('player_mention')
 		.setDescription('player mention')
 		.setRequired(true));
-export async function execute(interaction, globalVariables) {
+export async function execute(interaction) {
 	const discord_id = interaction.options.getUser('player_mention').id;
 	var find = false;
-	for (let user of globalVariables.Users) {
+	for (let user of interaction.client.data.users) {
 		if (user.discord_id === discord_id) {
 			find = true;
 			if (!user.guilds.includes(interaction.guildId)) {
@@ -19,7 +19,7 @@ export async function execute(interaction, globalVariables) {
 			}
 			removePlayerDB(discord_id, interaction.guildId, user.guilds.length, interaction);
 			if (user.guilds.length === 1) {
-				for (const game of globalVariables.Games) {
+				for (const game of interaction.client.data.games) {
 					for (const achievementID of Object.keys(game.achievements)) {
 						if (typeof game.achievements[achievementID][user.steam_id] != 'undefined') {
 							delete game.achievements[achievementID][user.steam_id];
@@ -30,8 +30,8 @@ export async function execute(interaction, globalVariables) {
 					}
 
 				}
-				const indexUser = globalVariables.Users.indexOf(user);
-				globalVariables.Users.splice(indexUser, 1);
+				const indexUser = interaction.client.data.users.indexOf(user);
+				interaction.client.data.users.splice(indexUser, 1);
 				console.log(`${user.nickname} erased from DB`);
 			}
 			else {

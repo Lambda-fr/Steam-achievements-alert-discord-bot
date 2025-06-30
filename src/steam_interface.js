@@ -66,21 +66,21 @@ async function verifyAvatars(users) {
   }));
 }
 
-function listenForNewAchievements(globalVariables) {
+function listenForNewAchievements(appData) {
   // Listen for new achievements and handle Discord notifications
   console.log('listening to new achievements...');
 
   setInterval(async function () {
     try {
-      console.log(`Games list : ${globalVariables.Games.map(game => game.name)}`);
-      globalVariables.t_lookback = globalVariables.t_lookback + 60;
-      console.log(`lookback :${globalVariables.t_lookback}`);
-      await Promise.all(globalVariables.Users.map(async user => {
+      console.log(`Games list : ${appData.games.map(game => game.name)}`);
+      appData.tLookback = appData.tLookback + 60;
+      console.log(`lookback :${appData.tLookback}`);
+      await Promise.all(appData.users.map(async user => {
         try {
-          await user.getRecentlyPlayedGames(globalVariables.Games);
+          await user.getRecentlyPlayedGames(appData.games);
           await Promise.all(user.recentlyPlayedGames.map(async game => {
             try {
-              await game.updateAchievementsForUser(user, globalVariables.t_lookback, false);
+              await game.updateAchievementsForUser(user, appData.tLookback, false);
             } catch (err) {
               console.error(`Error updating achievements for game ${game.name}:`, err);
             }
@@ -92,14 +92,14 @@ function listenForNewAchievements(globalVariables) {
 
       // This is not clean: mutating user.newAchievements in place and reversing it
       // Consider refactoring to avoid side effects
-      const new_achievements = globalVariables.Users.map(user => user.newAchievements.reverse().map(a => [user, a])).flat(1);
+      const new_achievements = appData.users.map(user => user.newAchievements.reverse().map(a => [user, a])).flat(1);
       console.log(`Nb new achievements to display : ${new_achievements.length}`);
 
       let guild;
 
       for (const newA of new_achievements) {
         for (const guild_id of newA[0].guilds) {
-          guild = globalVariables.Guilds.find(g => g.id === guild_id);
+          guild = appData.guilds.find(g => g.id === guild_id);
           if (typeof guild === 'undefined') {
             continue;
           }
@@ -110,7 +110,7 @@ function listenForNewAchievements(globalVariables) {
 
           if (newA[1].object.game.guilds.includes(guild_id)) {
             try {
-              await newA[1].object.displayDiscordNewAchievement(globalVariables.Users, guild, newA[0], newA[1].pos);
+              await newA[1].object.displayDiscordNewAchievement(appData.users, guild, newA[0], newA[1].pos);
             } catch (err) {
               console.error(`Error displaying new achievement in Discord for guild ${guild_id}:`, err);
             }
@@ -118,7 +118,7 @@ function listenForNewAchievements(globalVariables) {
         }
       }
       // Reset newAchievements array for all users
-      for (const user of globalVariables.Users) {
+      for (const user of appData.users) {
         user.newAchievements = [];
       }
     } catch (err) {

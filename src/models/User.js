@@ -27,6 +27,7 @@ class User {
       }
       value.response.games.forEach(game => {
         this.timePlayedByGame[game.appid] = game.playtime_forever
+        //get game icon
       });
       console.log(`Games playtime updated for ${this.nickname} (${this.steam_id})`);
 

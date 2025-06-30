@@ -12,15 +12,15 @@ export const data = new SlashCommandBuilder()
 	.addStringOption(option => option.setName('name')
 		.setDescription('the name you want to set for this game. You can set aliases (separate by ",")')
 		.setRequired(true));
-export async function execute(interaction, globalVariables) {
+export async function execute(interaction) {
 	const game_id = interaction.options.getString('game_id');
 	const nameOption = interaction.options.getString('name');
 	const [game_name, ...aliases] = nameOption.split(',').map(s => s.trim());
 	await interaction.deferReply();
 	const game_id_valid = await isGameIdValid(game_id);
 	if (game_id_valid == 1) {
-		const gameIdFound = globalVariables.Games.find(game => (game.id === game_id));
-		const otherGameNameFound = globalVariables.Games.find(game => (game.id !== game_id) && (game.name === game_name || game.aliases.includes(game_name) || aliases.some(alias => game.aliases.includes(alias) || (game.name == alias))));
+		const gameIdFound = interaction.client.data.games.find(game => (game.id === game_id));
+		const otherGameNameFound = interaction.client.data.games.find(game => (game.id !== game_id) && (game.name === game_name || game.aliases.includes(game_name) || aliases.some(alias => game.aliases.includes(alias) || (game.name == alias))));
 		if (otherGameNameFound) {
 			await interaction.editReply('Alias/Name already used by other game.');
 			return;
@@ -43,15 +43,15 @@ export async function execute(interaction, globalVariables) {
 
 		}
 		else {
-			globalVariables.Games.push(new Game(game_name, game_id, [interaction.guildId], aliases));
+			interaction.client.data.games.push(new Game(game_name, game_id, [interaction.guildId], aliases));
 		}
-		let gameObject = globalVariables.Games.find(game => game.id === game_id);
+		let gameObject = interaction.client.data.games.find(game => game.id === game_id);
 
 		addGameDB(interaction, gameObject);
 
-		globalVariables.Users.map(async (user) => {
-			await user.getPlaytime(globalVariables.Games);
-			await gameObject.updateAchievements(user, globalVariables.t_lookback);
+		interaction.client.data.users.map(async (user) => {
+			await user.getPlaytime(interaction.client.data.games);
+			await gameObject.updateAchievements(user, interaction.client.data.t_lookback);
 		});
 		if (gameObject.realName === '') {
 			gameObject.getRealName();

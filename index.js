@@ -47,26 +47,27 @@ if (args.length > 0) {
 	}
 }
 
-var globalVariables = {
-	'Guilds': [],
-	'Users': [],
-	'Games': [],
-	't_lookback': t_lookback
-}
+// Attach a data object to the client to hold application state
+client.data = {
+	guilds: [],
+	users: [],
+	games: [],
+	tLookback: t_lookback
+};
 
 
 client.once(Events.ClientReady, async c => {
 	try {
 		console.log(`Ready! Logged in as ${c.user.tag}`);
-		globalVariables.Guilds = client.guilds.cache.map(guild => new Guild(guild.id));
-		[globalVariables.Users, globalVariables.Games] = await getInfosDB(globalVariables.Guilds, client);
-		await loadAvatars(globalVariables.Users) //to get avatars for each players
-		await verifyAvatars(globalVariables.Users) //to load default avatars for users without avatar
+		client.data.guilds = client.guilds.cache.map(guild => new Guild(guild.id));
+		[client.data.users, client.data.games] = await getInfosDB(client.data.guilds, client);
+		await loadAvatars(client.data.users) //to get avatars for each players
+		await verifyAvatars(client.data.users) //to load default avatars for users without avatar
 
-		await Promise.all([await Promise.all(globalVariables.Games.map(async game => {
-			await Promise.all(globalVariables.Users.map(async user => {
+		await Promise.all([await Promise.all(client.data.games.map(async game => {
+			await Promise.all(client.data.users.map(async user => {
 				{
-					await game.updateAchievementsForUser(user, globalVariables.t_lookback, true)
+					await game.updateAchievementsForUser(user, client.data.tLookback, true)
 				}
 			}))
 			if (game.realName == '') {
@@ -74,17 +75,17 @@ client.once(Events.ClientReady, async c => {
 			}
 		})),
 
-		await Promise.all(globalVariables.Users.map(async user => {
+		await Promise.all(client.data.users.map(async user => {
 			await user.getPlaytime()
 		}))
 		])
 
-		console.table(globalVariables.Users)
-		console.table(globalVariables.Games)
-		console.table(globalVariables.Guilds)
+		console.table(client.data.users)
+		console.table(client.data.games)
+		console.table(client.data.guilds)
 		console.log("Games stats updated")
 
-		listenForNewAchievements(globalVariables)
+		listenForNewAchievements(client.data)
 	} catch (err) {
 		console.error("Fatal error during bot initialization:", err);
 		process.exit(1);
@@ -148,7 +149,7 @@ client.on(Events.InteractionCreate, async interaction => {
 
 	try {
 		console.log(`Commande executée : ${interaction.commandName}`)
-		await command.execute(interaction, globalVariables);
+		await command.execute(interaction);
 	} catch (error) {
 		console.error(`Error executing command ${interaction.commandName}:`, error);
 		try {

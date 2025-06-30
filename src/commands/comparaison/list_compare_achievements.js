@@ -10,10 +10,10 @@ export const data = new SlashCommandBuilder()
 	.addUserOption(option => option.setName('player_mention')
 		.setDescription('mention a player if you want to show only its achievements')
 		.setRequired(false));
-export async function execute(interaction, globalVariables) {
+export async function execute(interaction) {
 	const user_vs = interaction.options.getUser('player_mention');
 	const game_name = interaction.options.getString('game_name');
-	const gameObject = globalVariables.Games.find(game => game.name === game_name || game.aliases.includes(game_name));
+	const gameObject = interaction.client.data.games.find(game => game.name === game_name || game.aliases.includes(game_name));
 	if (typeof gameObject === 'undefined') {
 		await interaction.reply('Game not found!');
 		return;
@@ -22,7 +22,7 @@ export async function execute(interaction, globalVariables) {
 		await interaction.reply('Game not in the guild list!');
 		return;
 	}
-	const userAuthor = globalVariables.Users.find(user => user.discord_id === interaction.user.id);
+	const userAuthor = interaction.client.data.users.find(user => user.discord_id === interaction.user.id);
 	if (typeof userAuthor === 'undefined') {
 		await interaction.reply("You are not in players list. Use */addplayer* command");
 		return;
@@ -33,7 +33,7 @@ export async function execute(interaction, globalVariables) {
 			await interaction.reply("You can't compare against yourself!");
 			return;
 		}
-		const userVsObject = globalVariables.Users.find(user => user.discord_id === user_vs.id && user.guilds.includes(interaction.guildId));
+		const userVsObject = interaction.client.data.users.find(user => user.discord_id === user_vs.id && user.guilds.includes(interaction.guildId));
 		if (typeof userVsObject === 'undefined') {
 			await interaction.reply('User vs. not in the guild list!');
 			return;
@@ -43,7 +43,7 @@ export async function execute(interaction, globalVariables) {
 		}
 	}
 	else {
-		users_vs = globalVariables.Users.filter(user => {
+		users_vs = interaction.client.data.users.filter(user => {
 
 			if (user.guilds.includes(interaction.guildId) && user.discord_id != interaction.user.id) {
 				return true;
