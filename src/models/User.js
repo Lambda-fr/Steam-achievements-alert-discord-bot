@@ -11,7 +11,6 @@ class User {
     this.avatar;
     this.recentlyPlayedGames = [];
     this.newAchievements = [];
-
     this.displayedAchievements = [];
     this.ownedGames = [];
   }
@@ -21,7 +20,7 @@ class User {
       if (!value?.response?.games) {
         throw new Error("Response empty");
       }
-
+      this.ownedGames = [];
       await Promise.all(value.response.games.map(async (game) => {
         let nbTotalAchievements = 0;
         let nbUnlockedAchievements = 0;
@@ -50,6 +49,7 @@ class User {
           isCompleted100Percent: isCompleted100Percent,
         });
       }));
+
       console.log(`Games playtime and achievement status updated for ${this.nickname} (${this.steam_id})`);
 
     } catch (err) {

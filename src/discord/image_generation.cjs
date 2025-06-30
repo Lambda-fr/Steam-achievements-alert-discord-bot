@@ -250,6 +250,9 @@ async function displayProgressionBar(interaction, gameObject) {
 
             users_nb_unlocked_not_null.forEach((v) => {
                 context.drawImage(v[0].avatar, 25, 48 + n * 70, 50, 50);
+                context.strokeStyle = v[0].color || '#ffffff'; // Use user's color if available
+                context.lineWidth = 2;
+                context.strokeRect(25, 48 + n * 70, 50, 50);
                 context.font = '15px "Open Sans Regular"';
                 context.fillStyle = '#bfbfbf';
                 context.fillText(`${v[1]}/${gameObject.nbTotal} (${parseInt(100 * v[1] / gameObject.nbTotal)}%)`, 100 + barLength + 10, 71 + n * 70);
@@ -358,9 +361,123 @@ async function displayAchievementsList(achievements_locked, interaction, canvas_
     })
 }
 
+async function displayLeaderboard(interaction, leaderboardData) {
+    try {
+        Canvas.registerFont(path.join(ASSETS_PATH, 'OpenSans-VariableFont_wdth,wght.ttf'), { family: 'Open Sans Regular' });
+        const background = await Canvas.loadImage(path.join(ASSETS_PATH, 'background.jpg'));
+
+        const avatarHeight = 50;
+        const avatarYPadding = 25;
+        const iconSize = 20;
+        const iconXOffset = 30; // Space between icons
+        const gamesPerLine = 16; // Max icons per line
+        const lineSpacing = 10; // Vertical space between lines of icons
+        const playerEntryPadding = 20; // Padding between the bottom of one player's content and the next player's avatar
+
+        let calculatedTotalHeight = 48; // For title and initial padding
+        let usersYPositions = []; // Y position for the top of the current player's avatar
+        usersYPositions.push(calculatedTotalHeight); // Start with the first player's position
+        for (let i = 0; i < leaderboardData.length; i++) {
+            const entry = leaderboardData[i];
+            if (i !== 0) {
+                usersYPositions.push(calculatedTotalHeight);
+            }
+            const numberOfCompletedGames = entry.completedGames.length;
+            if (numberOfCompletedGames > gamesPerLine) {
+                // If there are games, the bottom is determined by the last icon drawn
+                const numLinesOfGames = Math.ceil(numberOfCompletedGames / gamesPerLine);
+                calculatedTotalHeight += avatarYPadding + (numLinesOfGames * (iconSize + lineSpacing));
+            }
+            else {
+                calculatedTotalHeight += avatarHeight;
+            }
+            calculatedTotalHeight += playerEntryPadding;
+        }
+
+        const canvas = Canvas.createCanvas(700, calculatedTotalHeight);
+        const context = canvas.getContext('2d');
+
+        context.drawImage(background, 0, 0, canvas.width, canvas.height);
+
+        context.font = '25px "Open Sans Regular"';
+        context.fillStyle = '#ffffff';
+        context.fillText('Leaderboard - Games Completed', 25, 35);
+
+
+
+        for (let i = 0; i < leaderboardData.length; i++) {
+            let currentYPosition = usersYPositions[i];
+            const entry = leaderboardData[i];
+            const user = entry.user;
+            const numberOfCompletedGames = entry.completedGames.length;
+
+            // Rank
+            context.font = '15px "Open Sans Regular"';
+            context.fillStyle = '#ffffff';
+            context.fillText(`#${i + 1}`, 25, currentYPosition + (avatarHeight / 2)); // Centered vertically with avatar
+
+            // Avatar
+            if (user.avatar) {
+                try {
+                    context.drawImage(user.avatar, 60, currentYPosition, avatarHeight, avatarHeight);
+                    context.strokeStyle = user.color || '#ffffff';
+                    context.lineWidth = 2;
+                    context.strokeRect(60, currentYPosition, avatarHeight, avatarHeight);
+                } catch (err) {
+                    console.warn(`Error loading avatar for user ${user.nickname}:`, err);
+                }
+            } else {
+                console.warn(`Missing avatar URL for user ${user.nickname}`);
+            }
+
+            // Nickname
+            context.font = '20px "Open Sans Regular"';
+            context.fillStyle = '#ffffff';
+            context.fillText(user.nickname, 130, currentYPosition + 16); // Centered vertically with avatar
+
+            // Completed Games Count
+            context.font = '15px "Open Sans Regular"';
+            context.fillStyle = '#ffffff';
+            context.textAlign = 'right';
+            context.fillText(`${numberOfCompletedGames} games`, canvas.width - 25, currentYPosition + 16);
+            context.textAlign = 'left';
+
+            // Games completed icons
+            let iconCurrentX = 130;
+            let iconCurrentY = currentYPosition + avatarYPadding; // Start below avatar block 
+
+            for (let j = 0; j < entry.completedGames.length; j++) {
+                const game = entry.completedGames[j];
+                if (j > 0 && j % gamesPerLine === 0) {
+                    // New line of icons
+                    iconCurrentX = 130;
+                    iconCurrentY += iconSize + lineSpacing;
+                }
+
+                try {
+                    const iconImage = await Canvas.loadImage(game.img);
+                    context.drawImage(iconImage, iconCurrentX, iconCurrentY, iconSize, iconSize);
+                } catch (err) {
+                    console.warn(`Error loading game icon for user ${user.nickname}, game ${game.name}:`, err);
+                }
+                iconCurrentX += iconXOffset;
+            }
+
+        }
+
+        const attachment = new AttachmentBuilder(canvas.toBuffer(), 'leaderboard.png');
+        await interaction.editReply({ files: [attachment] });
+
+    } catch (err) {
+        console.error('Error displaying leaderboard:', err);
+        await interaction.editReply('There was an error generating the leaderboard.');
+    }
+}
+
 module.exports = {
     displayAchievementsHistory,
     displayProgressionBar,
     displayAchievementsList,
-    displayNewAchievementImage
+    displayNewAchievementImage,
+    displayLeaderboard
 };
