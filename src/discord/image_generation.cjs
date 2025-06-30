@@ -39,11 +39,7 @@ async function displayNewAchievementImage(achievement, users, guild, author, pos
                 })
         ])
         const decal = 160
-        if (author.avatar) {
-            context.drawImage(author.avatar, decal, 140, 32, 32);
-        } else {
-            console.warn("Missing author.avatar");
-        }
+        drawAvatarWithBorder(context, author.avatar, decal, 140, 32, 32, author.color);
 
         const players = Object.keys(achievement.playersUnlockTime);
         var playerObject;
@@ -57,11 +53,16 @@ async function displayNewAchievementImage(achievement, users, guild, author, pos
                 playerObject &&
                 playerObject.guilds.includes(guild.id)
             ) {
-                if (playerObject.avatar) {
-                    context.drawImage(playerObject.avatar, decal + 40 * (index + 1), 140, 32, 32);
-                } else {
-                    console.warn(`Missing avatar for player ${player}`);
-                }
+                drawAvatarWithBorder(
+                    context,
+                    playerObject.avatar,
+                    decal + 40 * (index + 1),
+                    140,
+                    32,
+                    32,
+                    playerObject.color
+                );
+
                 index = index + 1;
             }
         }
@@ -249,10 +250,7 @@ async function displayProgressionBar(interaction, gameObject) {
             const barLength = 480
 
             users_nb_unlocked_not_null.forEach((v) => {
-                context.drawImage(v[0].avatar, 25, 48 + n * 70, 50, 50);
-                context.strokeStyle = v[0].color || '#ffffff'; // Use user's color if available
-                context.lineWidth = 2;
-                context.strokeRect(25, 48 + n * 70, 50, 50);
+                drawAvatarWithBorder(context, v[0].avatar, 25, 48 + n * 70, 50, 50, v[0].color);
                 context.font = '15px "Open Sans Regular"';
                 context.fillStyle = '#bfbfbf';
                 context.fillText(`${v[1]}/${gameObject.nbTotal} (${parseInt(100 * v[1] / gameObject.nbTotal)}%)`, 100 + barLength + 10, 71 + n * 70);
@@ -309,7 +307,7 @@ async function displayAchievementsList(achievements_locked, interaction, canvas_
             const globalPercentage_width = context.measureText(`(${a.object.globalPercentage}%)`).width
 
             a.playersWhoUnlocked.map(async (user_a, index) => {
-                context.drawImage(user_a.avatar, 100 + title_width + globalPercentage_width + 20 + 40 * index, 46 + n * SPACE_BETWEEN, 30, 30);
+                drawAvatarWithBorder(context, user_a.avatar, 100 + title_width + globalPercentage_width + 20 + 40 * index, 46 + n * SPACE_BETWEEN, 30, 30, user_a.color);
             })
             // context.fillText(txt, 100 + title_width + 10 + 40 * index, 68 + n * SPACE_BETWEEN);
 
@@ -418,18 +416,7 @@ async function displayLeaderboard(interaction, leaderboardData) {
             context.fillText(`#${startRank + i}`, 25, currentYPosition + (avatarHeight / 2)); // Centered vertically with avatar
 
             // Avatar
-            if (user.avatar) {
-                try {
-                    context.drawImage(user.avatar, 60, currentYPosition, avatarHeight, avatarHeight);
-                    context.strokeStyle = user.color || '#ffffff';
-                    context.lineWidth = 2;
-                    context.strokeRect(60, currentYPosition, avatarHeight, avatarHeight);
-                } catch (err) {
-                    console.warn(`Error loading avatar for user ${user.nickname}:`, err);
-                }
-            } else {
-                console.warn(`Missing avatar URL for user ${user.nickname}`);
-            }
+            drawAvatarWithBorder(context, user.avatar, 60, currentYPosition, avatarHeight, avatarHeight, user.color);
 
             // Nickname
             context.font = '20px "Open Sans Regular"';
@@ -505,6 +492,16 @@ async function displayLeaderboard(interaction, leaderboardData) {
             ]
         });
     });
+}
+
+
+function drawAvatarWithBorder(context, avatar, x, y, w, h, color = '#ffffff') {
+    if (avatar) {
+        context.drawImage(avatar, x, y, w, h);
+        context.strokeStyle = color;
+        context.lineWidth = 2;
+        context.strokeRect(x, y, w, h);
+    }
 }
 
 module.exports = {
