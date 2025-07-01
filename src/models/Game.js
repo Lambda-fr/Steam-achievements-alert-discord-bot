@@ -1,5 +1,4 @@
 import { getPlayerAchievements, getGlobalAchievementPercentagesForApp, getSchemaForGame } from '../steam/api.js';
-import Achievement from './Achievement.js';
 
 class Game {
     constructor(name, id, guilds, aliases) {
@@ -8,7 +7,7 @@ class Game {
         this.aliases = aliases;
         this.realName = '';
         this.guilds = guilds;
-        this.achievements = {}; //Dictionnaire clé id achievements et valeur l'objet de l'achievement ; used only if inGuildsGameList is true
+        this.achievements = {}; //Dictionnaire achievements ; used only if inGuildsGameList is true
         this.nbUnlocked = {}; //Dictionnaire user steam id avec l'objet user
         this.nbTotal = 0;
     }
@@ -37,7 +36,13 @@ class Game {
                     nb_unlocked_user++;
                 }
                 if (!this.achievements[a.apiname]) {
-                    this.achievements[a.apiname] = new Achievement(this, a.apiname, a.name, a.description);
+                    this.achievements[a.apiname] = {
+                        achievementName: a.name,
+                        achievementDescription: a.description,
+                        playersUnlockTime: {},
+                        globalPercentage: undefined,
+                        icon: undefined
+                    };
                     achievements_need_icons = true;
                 }
                 this.achievements[a.apiname].playersUnlockTime[user.steam_id] = a.unlocktime;
@@ -45,7 +50,7 @@ class Game {
                 if (!start && a.unlocktime > last_scan) {
                     const lclId = `${this.id}_${a.apiname}`;
                     if (!user.displayedAchievements.includes(lclId)) {
-                        user.newAchievements.push({ object: this.achievements[a.apiname], pos: nb_new_achievements });
+                        user.newAchievements.push({ object: this.achievements[a.apiname], gameId: this.id, pos: nb_new_achievements });
                         user.displayedAchievements.push(lclId);
                         nb_new_achievements++;
                     }

@@ -16,7 +16,7 @@ const gifs = [
     "https://tenor.com/view/mrandmissjackson-ariana-grande-michael-jackson-gif-20951576"
 ];
 
-async function displayNewAchievementImage(achievement, users, guild, author, position) {
+async function displayNewAchievementImage(achievement, game, users, guild, author, position) {
     try {
         Canvas.registerFont(path.join(ASSETS_PATH, 'OpenSans-VariableFont_wdth,wght.ttf'), { family: 'Open Sans Regular' })
         const canvas = Canvas.createCanvas(700, 190);
@@ -82,16 +82,16 @@ async function displayNewAchievementImage(achievement, users, guild, author, pos
         context.fillText(txt2_2, decal + (index + 1) * 40, 165);
 
         attachment = new AttachmentBuilder(canvas.toBuffer())
-        const unlock_order = achievement.game.nbUnlocked[author.steam_id].nbUnlocked - position
-        const unlock_rate = unlock_order / achievement.game.nbTotal * 100;
-        const game_finished = unlock_order === achievement.game.nbTotal
-        await guild.channel.send({ content: `${game_finished ? '🎉' : ''} <@${author.discord_id}> unlocked an achievement on ${achievement.game.realName}. Progress : (${unlock_order}/${achievement.game.nbTotal}) [${unlock_rate.toFixed(2)}%] ${game_finished ? '🎉' : ''}`, files: [attachment] })
+        const unlock_order = game.nbUnlocked[author.steam_id].nbUnlocked - position;
+        const unlock_rate = unlock_order / game.nbTotal * 100;
+        const game_finished = unlock_order === game.nbTotal
+        await guild.channel.send({ content: `${game_finished ? '🎉' : ''} <@${author.discord_id}> unlocked an achievement on ${game.realName}. Progress : (${unlock_order}/${game.nbTotal}) [${unlock_rate.toFixed(2)}%] ${game_finished ? '🎉' : ''}`, files: [attachment] })
         if (game_finished) {
             guild.channel.send(gifs[Math.floor(Math.random() * gifs.length)])
         }
     }
     catch (err) {
-        console.error(`Error displaying new achievement for ${author.nickname} (${author.steam_id}) in game ${achievement.game.realName}:`, err);
+        console.error(`Error displaying new achievement for ${author.nickname} (${author.steam_id}) in game ${game.realName}:`, err);
     }
 }
 

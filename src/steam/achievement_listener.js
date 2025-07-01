@@ -1,4 +1,4 @@
-
+import { displayNewAchievementImage } from '../discord/image_generation.cjs';
 
 async function updateAllUsersAchievements(appData) {
   console.log(`Games list : ${appData.games.map(game => game.name)}`);
@@ -21,7 +21,7 @@ async function updateAllUsersAchievements(appData) {
 }
 
 async function processAndDisplayNewAchievements(appData) {
-  const new_achievements = appData.users.map(user => user.newAchievements.reverse().map(a => [user, a])).flat(1);
+  const new_achievements = appData.users.map(user => user.newAchievements.reverse().map(a => [user, a])).flat(1); // Flatten the array to get a list of new achievements with user context
   console.log(`Nb new achievements to display : ${new_achievements.length}`);
 
   for (const newA of new_achievements) {
@@ -30,10 +30,10 @@ async function processAndDisplayNewAchievements(appData) {
       if (typeof guild === 'undefined' || typeof guild.channel === 'undefined' || typeof guild.channel_id === 'undefined') {
         continue;
       }
-
-      if (newA[1].object.game.guilds.includes(guild_id)) {
+      const game = appData.games.find(g => g.id === newA[1].gameId);
+      if (game.guilds.includes(guild_id)) {
         try {
-          await newA[1].object.displayDiscordNewAchievement(appData.users, guild, newA[0], newA[1].pos);
+          await displayNewAchievementImage(newA[1].object, game, appData.users, guild, newA[0], newA[1].pos);
         } catch (err) {
           console.error(`Error displaying new achievement in Discord for guild ${guild_id}:`, err);
         }
