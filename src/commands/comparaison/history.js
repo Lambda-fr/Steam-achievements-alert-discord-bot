@@ -19,7 +19,7 @@ export async function execute(interaction) {
         return;
     }
 
-    let [all_timestamps, datasets, gameRealName] = gameObject.getAchievementsHistory(interaction.guildId);
+    let [all_timestamps, datasets, gameRealName] = gameObject.getAchievementsHistory(interaction.guildId, interaction.client.data.users);
     discordImageFunctions.displayAchievementsHistory(interaction, all_timestamps, datasets, gameRealName);
 
 }

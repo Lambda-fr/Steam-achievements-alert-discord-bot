@@ -7,8 +7,8 @@ class Game {
         this.aliases = aliases;
         this.realName = '';
         this.guilds = guilds;
-        this.achievements = {}; //Dictionnaire achievements ; used only if inGuildsGameList is true
-        this.nbUnlocked = {}; //Dictionnaire user steam id avec l'objet user
+        this.achievements = {}; //Dictionary of achievements; used only if inGuildsGameList is true
+        this.nbUnlocked = {}; //Dictionary user steam id with the number of achievements unlocked
         this.nbTotal = 0;
     }
 
@@ -61,7 +61,7 @@ class Game {
                 await this.getAchievementsIcon();
                 await this.updateGlobalPercentage();
             }
-            this.nbUnlocked[user.steam_id] = { nbUnlocked: nb_unlocked_user, user: user };
+            this.nbUnlocked[user.steam_id] = nb_unlocked_user;
 
             if (!start) {
                 console.log(`Found ${nb_new_achievements} new achievements for ${user.nickname} on ${this.name}`);
@@ -178,7 +178,7 @@ class Game {
         return validAchievements
     }
 
-    getAchievementsHistory(guildId) {
+    getAchievementsHistory(guildId, usersData) {
         try {
             let timestamp_history = {} //Dict with list of timestamps of achievements unlock time for each player(key)
             let all_timestamps = []
@@ -186,7 +186,8 @@ class Game {
 
             let nbAchievementsList = {}
             Object.keys(this.nbUnlocked).forEach(userSteamID => {
-                if (this.nbUnlocked[userSteamID].user.guilds.includes(guildId)) {
+                const user = usersData.find(u => u.steam_id === userSteamID);
+                if (user && user.guilds.includes(guildId)) {
                     timestamp_history[userSteamID] = []
                     nbAchievementsList[userSteamID] = []
                     guild_users.push(userSteamID)
@@ -232,12 +233,13 @@ class Game {
 
             let datasets = []
 
-            for (const [userSteamID, userObject] of Object.entries(this.nbUnlocked)) {
-                if (guild_users.includes(userSteamID)) {
+            for (const userSteamID of guild_users) {
+                const user = usersData.find(u => u.steam_id === userSteamID);
+                if (user) {
                     datasets.push({
                         data: nbAchievementsList[userSteamID],
-                        borderColor: userObject.user.color,
-                        label: userObject.user.nickname
+                        borderColor: user.color,
+                        label: user.nickname
                     })
                 }
 

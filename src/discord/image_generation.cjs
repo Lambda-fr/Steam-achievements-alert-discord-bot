@@ -197,10 +197,11 @@ async function displayAchievementsHistory(interaction, all_timestamps, datasets,
 }
 async function displayProgressionBar(interaction, gameObject) {
     try {
-        var background
-        var black_bar
-        var blue_bar
-        var grey_bar
+        const usersData = interaction.client.data.users.filter(user => user.guilds.includes(interaction.guildId));
+        let background;
+        let black_bar;
+        let blue_bar;
+        let grey_bar;
         [background, blue_bar, black_bar, grey_bar] = await Promise.all([
             Canvas.loadImage(path.join(ASSETS_PATH, 'background.jpg')),
             Canvas.loadImage(path.join(ASSETS_PATH, 'blue_progress_bar.png')),
@@ -208,20 +209,26 @@ async function displayProgressionBar(interaction, gameObject) {
             Canvas.loadImage(path.join(ASSETS_PATH, 'grey_progress_bar.png'))
         ])
 
-        var users_nb_unlocked_not_null = Object.entries(gameObject.nbUnlocked).filter(([k, v]) => v.nbUnlocked !== 0 && v.user.guilds.includes(interaction.guildId))
+        let users_nb_unlocked_not_null = Object.entries(gameObject.nbUnlocked).filter(([k, v]) => {
+            const user = usersData.find(u => u.steam_id === k);
+            return v !== 0
+        });
         Canvas.registerFont(path.join(ASSETS_PATH, 'OpenSans-VariableFont_wdth,wght.ttf'), { family: 'Open Sans Regular' })
         const canvas = Canvas.createCanvas(700, 115 + (users_nb_unlocked_not_null.length - 1) * 70);
         const context = canvas.getContext('2d');
         var attachment;
         context.drawImage(background, 0, 0);
 
-        var sorted = [];
-        for (var [k, v] of users_nb_unlocked_not_null) {
-            sorted.push([v.user, v.nbUnlocked]);
+        let sorted = [];
+        for (let [k, v] of users_nb_unlocked_not_null) {
+            const user = usersData.find(u => u.steam_id === k);
+            if (user) {
+                sorted.push([user, v]);
+            }
         }
         sorted.sort(function (a, b) {
             return b[1] - a[1]
-        })
+        });
 
         users_nb_unlocked_not_null = sorted
 
