@@ -74,7 +74,7 @@ async function displayNewAchievementImage(achievement, game, users, guild, autho
         context.fillText(txt2_2, decal + (index + 1) * 40, 165);
 
         attachment = new AttachmentBuilder(canvas.toBuffer())
-        const unlock_order = game.nbUnlocked[author.steam_id].nbUnlocked - position;
+        const unlock_order = game.nbUnlocked[author.steam_id] - position;
         const unlock_rate = unlock_order / game.nbTotal * 100;
         const game_finished = unlock_order === game.nbTotal
         await guild.channel.send({ content: `${game_finished ? '🎉' : ''} <@${author.discord_id}> unlocked an achievement on ${game.realName}. Progress : (${unlock_order}/${game.nbTotal}) [${unlock_rate.toFixed(2)}%] ${game_finished ? '🎉' : ''}`, files: [attachment] })
