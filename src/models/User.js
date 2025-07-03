@@ -19,14 +19,15 @@ class User {
       const value = await getOwnedGames(this.steam_id);
       if (!value?.response?.games) {
         console.warn(`No owned games found for ${this.nickname} (${this.steam_id})`);
-        this.ownedGames = [];
         return false;
       }
       await Promise.all(value.response.games.map(async (gameData) => {
 
         let game = await getOrAddGame(appData, gameData.appid, gameData.img_icon_url ? `http://media.steampowered.com/steamcommunity/public/images/apps/${gameData.appid}/${gameData.img_icon_url}.jpg` : null, this.steam_id);
         if (game) {
-          this.ownedGames.push(game.id);
+          if (!this.ownedGames.includes(game.id)) {
+            this.ownedGames.push(game.id);
+          }
           //console.log(`Game ${game.id} (${gameData.appid}) added for user ${this.nickname} (${this.steam_id})`);
           game.playtime[this.steam_id] = gameData.playtime_forever;
         }
