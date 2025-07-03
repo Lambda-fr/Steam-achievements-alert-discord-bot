@@ -20,6 +20,7 @@ async function updateAllUsersAchievements(appData) {
 
   // Sequentially add games using getOrAddGame
 
+  console.log(`Nb games to add : ${gamesToAdd.length}`);
   for (const gameToAdd of gamesToAdd) {
     //gameToAdd structure : { appid, img_icon_url, user, playtime }
     let game = await getOrAddGame(appData, gameToAdd.appid, gameToAdd.img_icon_url, gameToAdd.user.steam_id);

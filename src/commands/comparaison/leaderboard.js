@@ -52,14 +52,6 @@ async function updateLeaderboard(interaction) {
                 totalUnlockedAchievements: totalUnlockedAchievements
             };
         }).sort((a, b) => b.numberOfCompletedGames - a.numberOfCompletedGames);
-        console.log('Leaderboard data:', leaderboardData);
-        for (const user of leaderboardData) {
-            console.log(`User: ${user.user.nickname}, Completed Games: ${user.numberOfCompletedGames}, Total Unlocked Achievements: ${user.totalUnlockedAchievements}`);
-            for (const game of user.completedGames) {
-                console.log(`  Game: ${game.name}, Unlocked Achievements: ${game.nbUnlocked[user.user.steam_id]}`);
-                console.log(`  Game ID: ${game.id}, Icon URL: ${game.img}`);
-            }
-        }
         await discordImageFunctions.displayLeaderboard(interaction, leaderboardData);
     } catch (error) {
         console.error('Error updating leaderboard:', error);
