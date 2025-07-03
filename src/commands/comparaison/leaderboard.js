@@ -15,44 +15,55 @@ export async function execute(interaction) {
 }
 
 async function updateLeaderboard(interaction) {
-    // Check if the user has permission to execute this command
-    if (!interaction.member.permissions.has('ManageGuild')) {
-        await interaction.reply('You do not have permission to use this command.');
-        return;
+    try {
+        // Check if the user has permission to execute this command
+        if (!interaction.member.permissions.has('ManageGuild')) {
+            await interaction.reply('You do not have permission to use this command.');
+            return;
+        }
+
+        // Defer the reply to allow time for processing             
+        await interaction.deferReply();
+        const guildUsers = interaction.client.data.users.filter(user => user.guilds.includes(interaction.guildId));
+
+        if (guildUsers.length === 0) {
+            await interaction.editReply('No users found in this guild.');
+            return;
+        }
+
+        const leaderboardData = guildUsers.map(user => {
+            const completedGames = user.ownedGames.map(gameId => {
+                const game = interaction.client.data.games.get(gameId);
+                if (game && game.isCompleted100Percent[user.steam_id]) {
+                    return game;
+                }
+            }).filter(g => g);
+
+            const numberOfCompletedGames = completedGames.length;
+            const totalUnlockedAchievements = user.ownedGames.reduce((acc, gameId) => {
+                const game = interaction.client.data.games.get(gameId);
+                return acc + (game && game.nbUnlocked[user.steam_id] ? game.nbUnlocked[user.steam_id] : 0);
+            }, 0);
+
+            return {
+                user: user,
+                numberOfCompletedGames: numberOfCompletedGames,
+                completedGames: completedGames,
+                totalUnlockedAchievements: totalUnlockedAchievements
+            };
+        }).sort((a, b) => b.numberOfCompletedGames - a.numberOfCompletedGames);
+        console.log('Leaderboard data:', leaderboardData);
+        for (const user of leaderboardData) {
+            console.log(`User: ${user.user.nickname}, Completed Games: ${user.numberOfCompletedGames}, Total Unlocked Achievements: ${user.totalUnlockedAchievements}`);
+            for (const game of user.completedGames) {
+                console.log(`  Game: ${game.name}, Unlocked Achievements: ${game.nbUnlocked[user.user.steam_id]}`);
+                console.log(`  Game ID: ${game.id}, Icon URL: ${game.img}`);
+            }
+        }
+        await discordImageFunctions.displayLeaderboard(interaction, leaderboardData);
+    } catch (error) {
+        console.error('Error updating leaderboard:', error);
+        await interaction.editReply('An error occurred while updating the leaderboard. Please try again later.');
     }
-
-    // Defer the reply to allow time for processing             
-    await interaction.deferReply();
-    const guildUsers = interaction.client.data.users.filter(user => user.guilds.includes(interaction.guildId));
-
-    if (guildUsers.length === 0) {
-        await interaction.editReply('No users found in this guild.');
-        return;
-    }
-    // Update owned games data for all users in the guild
-    //await interaction.editReply(`Updating owned games data for ${guildUsers.length} users...`);
-
-    // Fetch and update owned games data for each user
-    await Promise.all(guildUsers.map(user => user.updateOwnedGamesData().catch(err => {
-        console.error(`Error updating owned games for user ${user.nickname}:`, err);
-    })));
-    // get the total number of achievements unlocked and the number of games finished at 100% for each user
-    // await interaction.editReply(`Calculating leaderboard...`);
-
-    // Create leaderboard data
-    // Each entry will contain the user and the number of completed games
-    // Sort the leaderboard by the number of completed games in descending order
-    // Also include the total number of achievements unlocked for each user 
-    const leaderboardData = guildUsers.map(user => {
-        const completedGames = user.ownedGames.filter(game => game.isCompleted100Percent);
-        const numberOfCompletedGames = completedGames.length;
-        const totalUnlockedAchievements = user.ownedGames.reduce((acc, game) => acc + game.nbUnlockedAchievements, 0);
-        return {
-            user: user,
-            numberOfCompletedGames: numberOfCompletedGames,
-            completedGames: completedGames,
-            totalUnlockedAchievements: totalUnlockedAchievements
-        };
-    }).sort((a, b) => b.numberOfCompletedGames - a.numberOfCompletedGames);
-    await discordImageFunctions.displayLeaderboard(interaction, leaderboardData);
+    await interaction.editReply('Leaderboard updated successfully!');
 }

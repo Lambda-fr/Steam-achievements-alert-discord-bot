@@ -18,7 +18,7 @@ export const data = new SlashCommandBuilder()
 		.setRequired(false));
 export async function execute(interaction) {
 	const game_name = interaction.options.getString('game_name');
-	const gameObject = interaction.client.data.games.find(game => game.name === game_name || game.aliases.includes(game_name));
+	const gameObject = Array.from(interaction.client.data.games.values()).find(game => game.name === game_name || game.aliases.includes(game_name));
 	if (typeof gameObject === 'undefined') {
 		await interaction.reply('Game not found!');
 		return;

@@ -1,7 +1,6 @@
 import { SlashCommandBuilder } from 'discord.js';
 import { addGameDB } from '../../connectAndQueryJSON.js';
-import Game from '../../models/Game.js';
-import { isGameIdValid } from '../../steam/api.js';
+import { getOrAddGame } from '../../steam/appData.js';
 
 export const data = new SlashCommandBuilder()
 	.setName('add_game')
@@ -13,54 +12,57 @@ export const data = new SlashCommandBuilder()
 		.setDescription('the name you want to set for this game. You can set aliases (separate by ",")')
 		.setRequired(true));
 export async function execute(interaction) {
-	const game_id = interaction.options.getString('game_id');
+	const game_id = parseInt(interaction.options.getString('game_id'));
 	const nameOption = interaction.options.getString('name');
 	const [game_name, ...aliases] = nameOption.split(',').map(s => s.trim());
 	await interaction.deferReply();
-	const game_id_valid = await isGameIdValid(game_id);
-	if (game_id_valid == 1) {
-		const gameIdFound = interaction.client.data.games.find(game => (game.id === game_id));
-		const otherGameNameFound = interaction.client.data.games.find(game => (game.id !== game_id) && (game.name === game_name || game.aliases.includes(game_name) || aliases.some(alias => game.aliases.includes(alias) || (game.name == alias))));
+
+	try {
+		const otherGameNameFound = Array.from(interaction.client.data.games.values()).find(game => (game.id !== game_id) && (game.name === game_name || game.aliases.includes(game_name) || aliases.some(alias => game.aliases.includes(alias) || (game.name == alias))));
 		if (otherGameNameFound) {
 			await interaction.editReply('Alias/Name already used by other game.');
 			return;
 		}
 
-		if (gameIdFound) {
-			const guildIsIncluded = gameIdFound.guilds.includes(interaction.guildId);
-			const aliasesToAdd = [...new Set([game_name, ...aliases].filter(alias => (![gameIdFound.name, ...gameIdFound.aliases].includes(alias)) && alias.trim() !== ''))];
-			if (!aliasesToAdd.length) {
-				if (guildIsIncluded) {
-					await interaction.editReply('Game already in the list.');
-					return;
-				}
-			}
-			else {
-				gameIdFound.aliases = [...gameIdFound.aliases, ...aliasesToAdd];
-			}
-			if (!guildIsIncluded)
-				gameIdFound.guilds.push(interaction.guildId);
+		const gameObject = await getOrAddGame(
+			interaction.client.data,
+			game_id
+		);
 
+		if (!gameObject) {
+			await interaction.editReply('Game not found or not valid.');
+			return;
 		}
-		else {
-			interaction.client.data.games.push(new Game(game_name, game_id, [interaction.guildId], aliases));
+
+		// Update existing game's guilds and aliases
+		if (gameObject.guilds.includes(interaction.guildId)) {
+			// If the game is already in the guild's list, we don't need to add it again
+			await interaction.editReply(`Game ${gameObject.name} (${gameObject.id}) is already added to this guild.`);
+			return;
 		}
-		let gameObject = interaction.client.data.games.find(game => game.id === game_id);
+		gameObject.guilds.push(interaction.guildId);
 
-		addGameDB(interaction, gameObject);
-
-		interaction.client.data.users.map(async (user) => {
-			await user.updateOwnedGamesData();
-			await gameObject.updateAchievementsForUser(user, interaction.client.data.t_lookback);
+		// If the game already has a name, we don't overwrite it
+		if (!gameObject.name) {
+			gameObject.name = game_name;
+		}
+		// Else if the game already has a name, we add the new name as an alias
+		else if (!gameObject.aliases.includes(game_name)) {
+			gameObject.aliases.push(game_name);
+		}
+		// Add aliases if they are not already present
+		aliases.forEach(alias => {
+			if (!gameObject.aliases.includes(alias)) {
+				gameObject.aliases.push(alias);
+			}
 		});
-		if (gameObject.realName === '') {
-			gameObject.getRealName();
-		}
-		return;
+
+		if (!await addGameDB(interaction, gameObject)) throw new Error("Failed to add game to DB");
+
+		await interaction.editReply(`Game ${gameObject.name} (${gameObject.id}) added/updated.`);
+
+	} catch (error) {
+		console.error("Error adding game:", error);
+		await interaction.editReply("An unexpected error occurred while adding the game.");
 	}
-	if (game_id_valid == 0) {
-		await interaction.editReply("This game has no achievements. Not added.");
-		return;
-	}
-	await interaction.editReply("Invalid game ID.");
 }

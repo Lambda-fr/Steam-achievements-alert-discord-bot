@@ -13,7 +13,7 @@ export async function execute(interaction) {
         let errorCount = 0;
 
         for (const user of guildUsers) {
-            const success = await user.updateOwnedGamesData();
+            const success = await user.updateOwnedGamesData(interaction.client.data.games);
             if (success) {
                 updatedCount++;
             } else {

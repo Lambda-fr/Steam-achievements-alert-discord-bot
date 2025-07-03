@@ -1,5 +1,6 @@
 import { getOwnedGames, getRecentlyPlayedGames, getPlayerAchievements, getSchemaForGame } from '../steam/api.js';
 import config from '../../config.json' with { type: 'json' };
+import { getOrAddGame } from '../steam/appData.js';
 
 class User {
   constructor(steam_id, discord_id, nickname, guilds, color) {
@@ -8,75 +9,73 @@ class User {
     this.nickname = nickname;
     this.guilds = guilds;
     this.color = color;
-    this.avatar;
-    this.recentlyPlayedGames = [];
+    this.avatar = null;
     this.newAchievements = [];
     this.displayedAchievements = [];
     this.ownedGames = [];
   }
-  async updateOwnedGamesData() {
+  async updateOwnedGamesData(appData) {
     try {
       const value = await getOwnedGames(this.steam_id);
       if (!value?.response?.games) {
-        throw new Error("Response empty");
+        console.warn(`No owned games found for ${this.nickname} (${this.steam_id})`);
+        this.ownedGames = [];
+        return false;
       }
-      this.ownedGames = [];
-      await Promise.all(value.response.games.map(async (game) => {
-        let nbTotalAchievements = 0;
-        let nbUnlockedAchievements = 0;
-        let isCompleted100Percent = false;
+      await Promise.all(value.response.games.map(async (gameData) => {
 
-        try {
-          const playerAchievements = await getPlayerAchievements(game.appid, this.steam_id, config.lang);
-          if (playerAchievements?.playerstats?.achievements) {
-            nbTotalAchievements = playerAchievements.playerstats.achievements.length;
-            nbUnlockedAchievements = playerAchievements.playerstats.achievements.filter(a => a.achieved === 1).length;
-            if (nbTotalAchievements > 0 && nbUnlockedAchievements === nbTotalAchievements) {
-              isCompleted100Percent = true;
-            }
-          }
-        } catch (err) {
-          console.warn(`Could not get achievement info for game (${game.appid}):`, err.message);
+        let game = await getOrAddGame(appData, gameData.appid, gameData.img_icon_url ? `http://media.steampowered.com/steamcommunity/public/images/apps/${gameData.appid}/${gameData.img_icon_url}.jpg` : null, this.steam_id);
+        if (game) {
+          this.ownedGames.push(game.id);
+          //console.log(`Game ${game.id} (${gameData.appid}) added for user ${this.nickname} (${this.steam_id})`);
+          game.playtime[this.steam_id] = gameData.playtime_forever;
         }
 
-        this.ownedGames.push({
-          id: game.appid,
-          name: game.name,
-          img: game.img_icon_url ? `http://media.steampowered.com/steamcommunity/public/images/apps/${game.appid}/${game.img_icon_url}.jpg` : null,
-          playtime: game.playtime_forever,
-          nbTotalAchievements: nbTotalAchievements,
-          nbUnlockedAchievements: nbUnlockedAchievements,
-          isCompleted100Percent: isCompleted100Percent,
-        });
       }));
-
-      console.log(`Owned games, game playtime, and achievement status updated for ${this.nickname} (${this.steam_id})`);
+      console.log(`Owned games data updated for ${this.nickname} (${this.steam_id})`);
       return true;
 
     } catch (err) {
-      console.error(`Error fetching owned games, game playtime, and achievement status for ${this.steam_id}, ${this.nickname} : ${err.message || err}`);
+      console.error(`Error fetching owned games data for ${this.steam_id}, ${this.nickname} : ${err}`);
       return false;
     }
 
   }
 
-  async updateRecentlyPlayedGamesData(Games) {
+  async updateRecentlyPlayedGamesData(appData) {
     try {
       const value = await getRecentlyPlayedGames(this.steam_id);
-      this.recentlyPlayedGames = [];
+      let gamesToAdd = [];
+      let recentlyPlayedGames = [];
 
       if (value.response && value.response.total_count > 0) {
-        this.recentlyPlayedGames = value.response.games.map(game => {
-          const matchGame = Games.find(g => g.id === String(game.appid));
-          if (matchGame) {
-
-            return matchGame;
+        await Promise.all(value.response.games.map(async (gameData) => {
+          // Check if the gameId already exists in appData.games
+          if (appData.invalidGames.includes(parseInt(gameData.appid))) {
+            return;
           }
-        }).filter(notUndefined => notUndefined !== undefined);
+          const gameFound = appData.games.get(parseInt(gameData.appid));
+          if (gameFound) {
+            //console.warn(`Game with ID ${gameId} already exists in appData.`);
+            if (!gameFound.img && gameData.img_icon_url) {
+              gameFound.img = gameData.img_icon_url ? `http://media.steampowered.com/steamcommunity/public/images/apps/${gameData.appid}/${gameData.img_icon_url}.jpg` : null;
+            }
+            // If a userId is provided, update achievements for that user
+            if (this.steam_id) {
+              await gameFound.updateAchievementsForUser(appData, this.steam_id);
+              gameFound.owned = true;
+            }
+          } else {
+            gamesToAdd.push({ appid: gameData.appid, img_icon_url: gameData.img_icon_url ? `http://media.steampowered.com/steamcommunity/public/images/apps/${gameData.appid}/${gameData.img_icon_url}.jpg` : null, user: this, playtime: gameData.playtime_forever });
+          }
+          recentlyPlayedGames.push(`${gameData.appid} ${gameData.name ? gameData.name : ''}`);
+
+        }));
       }
 
-      console.log(`Recently played games [${this.nickname}] : ${this.recentlyPlayedGames.map(g => g.name).join(', ')}`);
-      return this.recentlyPlayedGames;
+      console.log(`Recently played games [${this.nickname}] : ${recentlyPlayedGames.join(', ')}`);
+      console.log(`Games to add for ${this.nickname} (${this.steam_id}) : ${gamesToAdd.map(g => g.appid).join(', ')}`);
+      return gamesToAdd;
 
     } catch (err) {
       console.error(`Error fetching recently played games for ${this.nickname} (Steam ID: ${this.steam_id}):`, err.message || err);

@@ -1,39 +1,39 @@
 import { getPlayerAchievements, getGlobalAchievementPercentagesForApp, getSchemaForGame } from '../steam/api.js';
+import config from '../../config.json' with { type: 'json' };
 
 class Game {
-    constructor(name, id, guilds, aliases) {
-        this.id = id;
-        this.name = name;
-        this.aliases = aliases;
+    constructor(id, img = null) {
+        this.id = parseInt(id);
+        this.name = '';
+        this.aliases = [];
         this.realName = '';
-        this.guilds = guilds;
+        this.guilds = [];
         this.achievements = {}; //Dictionary of achievements; used only if inGuildsGameList is true
         this.nbUnlocked = {}; //Dictionary user steam id with the number of achievements unlocked
+        this.playtime = {}; //Dictionary user steam id with the playtime
+        this.isCompleted100Percent = {}; //Dictionary user steam id with a boolean
+        this.img = img;
         this.nbTotal = 0;
+        this.owned = false;
     }
 
-    async updateAchievementsForUser(user, last_scan, start = false, lang) {
+    async updateAchievementsForUser(appData, userId) { //TO DO : And get Achievements qui respectent l'intervalle de temps demandé.
         // Skip if the user does not own this game
         try {
-            const value = await getPlayerAchievements(this.id, user.steam_id, lang);
-            if (!value.playerstats.success) {
-                if (value.playerstats.error === "Requested app has no stats") {
-                    //User doesn't own this game. Skipping
-                    return true;
-                }
-                throw new Error(`${user.nickname} profile is not public`);
+            const lastScan = appData.tLookback;
+            const user = appData.users.find(u => u.steam_id === userId);
+            const playerAchievements = await getPlayerAchievements(this.id, user.steam_id, config.lang);
+            if (!playerAchievements || !playerAchievements.playerstats || !playerAchievements.playerstats.achievements) {
+                throw new Error(`No achievements found for game ${this.id} for user ${user.steam_id}`);
             }
-            if (!value.playerstats.hasOwnProperty("achievements")) {
-                throw new Error(`${value.playerstats.gameName} doesn't have achievements`);
-            }
-            let nb_unlocked_user = 0;
-            let nb_new_achievements = 0;
-            this.nbTotal = value.playerstats.achievements.length;
-            this.realName = value.playerstats.gameName;
-            let achievements_need_icons = false;
-            for (const a of value.playerstats.achievements) {
+            this.nbTotal = playerAchievements.playerstats.achievements.length;
+            this.realName = playerAchievements.playerstats.gameName;
+
+            let nbUnlockedAchievements = 0;
+            let achievementsNeedIcons = false;
+            for (const a of playerAchievements.playerstats.achievements) {
                 if (a.unlocktime !== 0) {
-                    nb_unlocked_user++;
+                    nbUnlockedAchievements++;
                 }
                 if (!this.achievements[a.apiname]) {
                     this.achievements[a.apiname] = {
@@ -43,36 +43,33 @@ class Game {
                         globalPercentage: undefined,
                         icon: undefined
                     };
-                    achievements_need_icons = true;
+                    achievementsNeedIcons = true;
                 }
                 this.achievements[a.apiname].playersUnlockTime[user.steam_id] = a.unlocktime;
 
-                if (!start && a.unlocktime > last_scan) {
+                if (a.unlocktime > lastScan) {
                     const lclId = `${this.id}_${a.apiname}`;
                     if (!user.displayedAchievements.includes(lclId)) {
-                        user.newAchievements.push({ object: this.achievements[a.apiname], gameId: this.id, pos: nb_new_achievements });
+                        user.newAchievements.push({ object: this.achievements[a.apiname], gameId: this.id, pos: nbUnlockedAchievements });
                         user.displayedAchievements.push(lclId);
-                        nb_new_achievements++;
+                        nbUnlockedAchievements++;
                     }
                 }
             }
 
-            if (achievements_need_icons) {
+            if (achievementsNeedIcons) {
                 await this.getAchievementsIcon();
                 await this.updateGlobalPercentage();
             }
-            this.nbUnlocked[user.steam_id] = nb_unlocked_user;
+            this.nbUnlocked[user.steam_id] = nbUnlockedAchievements;
+            this.isCompleted100Percent[user.steam_id] = nbUnlockedAchievements === this.nbTotal;
+            console.log(`Achievements updated for user ${user.nickname} (${user.steam_id}) in game ${this.realName} (${this.id}): ${nbUnlockedAchievements}/${this.nbTotal} unlocked`);
+            return true;
 
-            if (!start) {
-                console.log(`Found ${nb_new_achievements} new achievements for ${user.nickname} on ${this.name}`);
-            }
         } catch (err) {
-            if (!start) {
-                console.error(`updateAchievements error for ${user.nickname} on ${this.name}:`, err);
-            }
+            console.error(`updateAchievementsForUser error for game ${this.id} and user ${userId}:`, err);
             return false;
         }
-        return true;
     }
 
     async updateGlobalPercentage() {
@@ -204,7 +201,6 @@ class Game {
                     }
                 }
             }
-
             all_timestamps.sort(function (a, b) {
                 return a - b;
             });
@@ -244,7 +240,6 @@ class Game {
                 }
 
             }
-
             return [all_timestamps, datasets, this.realName];
 
         } catch (err) {

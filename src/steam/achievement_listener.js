@@ -1,23 +1,34 @@
 import { displayNewAchievementImage } from '../discord/image_generation.cjs';
+import { getOrAddGame } from '../steam/appData.js';
 
 async function updateAllUsersAchievements(appData) {
-  console.log(`Games list : ${appData.games.map(game => game.name)}`);
   appData.tLookback = appData.tLookback + 60;
   console.log(`lookback :${appData.tLookback}`);
+
+  // Collect all games to add after all user updates
+  const gamesToAdd = [];
+
   await Promise.all(appData.users.map(async user => {
     try {
-      await user.updateRecentlyPlayedGamesData(appData.games);
-      await Promise.all(user.recentlyPlayedGames.map(async game => {
-        try {
-          await game.updateAchievementsForUser(user, appData.tLookback, false);
-        } catch (err) {
-          console.error(`Error updating achievements for game ${game.name}:`, err);
-        }
-      }));
+      // updateRecentlyPlayedGamesData returns a list of games to add
+      const games = await user.updateRecentlyPlayedGamesData(appData);
+      gamesToAdd.push(...games);
     } catch (err) {
       console.error(`Error processing user ${user.nickname}:`, err);
     }
   }));
+
+  // Sequentially add games using getOrAddGame
+  for (const gameToAdd of gamesToAdd) {
+    //gameToAdd structure : { appid, img_icon_url, user, playtime }
+    let game = await getOrAddGame(appData, gameToAdd.appid, gameToAdd.img_icon_url, gameToAdd.user.steam_id);
+    if (game) {
+      if (!gameToAdd.user.ownedGames.includes(game.id)) {
+        gameToAdd.user.ownedGames.push(game.id);
+      }
+      game.playtime[gameToAdd.user.steam_id] = gameToAdd.playtime;
+    }
+  }
 }
 
 async function processAndDisplayNewAchievements(appData) {
@@ -30,7 +41,7 @@ async function processAndDisplayNewAchievements(appData) {
       if (typeof guild === 'undefined' || typeof guild.channel === 'undefined' || typeof guild.channel_id === 'undefined') {
         continue;
       }
-      const game = appData.games.find(g => g.id === newA[1].gameId);
+      const game = appData.games.get(newA[1].gameId);
       if (game.guilds.includes(guild_id)) {
         try {
           await displayNewAchievementImage(newA[1].object, game, appData.users, guild, newA[0], newA[1].pos);

@@ -61,18 +61,15 @@ async function isGameIdValid(game_id) {
   // Check if a game ID is valid by requesting its schema
   try {
     const res = await fetch(`http://api.steampowered.com/ISteamUserStats/GetSchemaForGame/v2/?appid=${game_id}&key=${API_Steam_key}`);
-    if (res.ok) {
-      const value = await res.json();
-      if (!value?.game?.availableGameStats?.achievements || Object.keys(value.game.availableGameStats.achievements).length == 0) {
-        return 0;
-      }
-      return 1;
-    } else {
-      return -1;
+    if (!res.ok) return false;
+    const value = await res.json();
+    if (!value || !value.game || !value.game.availableGameStats || !value.game.availableGameStats.achievements || (value.game.availableGameStats.achievements.length < 1)) {
+      return false;
     }
+    return true;
   } catch (err) {
     console.error(`Error validating game id ${game_id}:`, err);
-    return -1;
+    return false;
   }
 }
 
@@ -127,7 +124,7 @@ async function getOwnedGames(steamId) {
 
 async function getRecentlyPlayedGames(steamId) {
   try {
-    const response = await fetch(`http://api.steampowered.com/IPlayerService/GetRecentlyPlayedGames/v0001/?key=${API_Steam_key}&steamid=${steamId}&format=json`);
+    const response = await fetch(`http://api.steampowered.com/IPlayerService/GetRecentlyPlayedGames/v0001/?key=${API_Steam_key}&steamid=${steamId}&format=json&include_appinfo=true`);
     if (!response.ok) {
       throw new Error(`HTTP error! Status: ${response.status}`);
     }

@@ -57,7 +57,6 @@ export async function execute(interaction) {
 	}
 
 	const color = '#' + Math.floor(Math.random() * 16777215).toString(16);
-	console.log(color);
 	if (is_new_player) {
 		interaction.client.data.users.push(new User(steam_id, discord_id, nickname, [interaction.guildId], color));
 	}
@@ -65,7 +64,6 @@ export async function execute(interaction) {
 		.then(async () => {
 			var userObject = interaction.client.data.users.find(user => user.discord_id === discord_id);
 			await loadAvatars([userObject]);
-			userObject.getPlaytime(interaction.client.data.games);
-			interaction.client.data.games.map(game => game.updateAchievementsForUser(userObject, interaction.client.data.t_lookback));
+			await userObject.updateOwnedGamesData(interaction.client.data);
 		});
 }

@@ -8,18 +8,26 @@ export const data = new SlashCommandBuilder()
         .setDescription('name of the game as you specified it (do /list_games)')
         .setRequired(true));
 export async function execute(interaction) {
-    const game_name = interaction.options.getString('game_name');
-    const gameObject = interaction.client.data.games.find(game => game.name === game_name || game.aliases.includes(game_name));
-    if (typeof gameObject === 'undefined') {
-        await interaction.reply('Game not found!');
-        return;
-    }
-    if (!gameObject.guilds.includes(interaction.guildId)) {
-        await interaction.reply('Game not in the guild list!');
-        return;
+    try {
+        await interaction.deferReply()
+        const game_name = interaction.options.getString('game_name');
+        const gameObject = Array.from(interaction.client.data.games.values()).find(game => game.name === game_name || game.aliases.includes(game_name));
+
+        if (typeof gameObject === 'undefined') {
+            await interaction.reply('Game not found!');
+            return;
+        }
+        if (!gameObject.guilds.includes(interaction.guildId)) {
+            await interaction.reply('Game not in the guild list!');
+            return;
+        }
+
+        let [all_timestamps, datasets, gameRealName] = gameObject.getAchievementsHistory(interaction.guildId, interaction.client.data.users);
+        discordImageFunctions.displayAchievementsHistory(interaction, all_timestamps, datasets, gameRealName);
+    } catch (error) {
+        console.error('Error fetching game history:', error);
+        await interaction.reply('An error occurred while fetching game history.');
     }
 
-    let [all_timestamps, datasets, gameRealName] = gameObject.getAchievementsHistory(interaction.guildId, interaction.client.data.users);
-    discordImageFunctions.displayAchievementsHistory(interaction, all_timestamps, datasets, gameRealName);
 
 }

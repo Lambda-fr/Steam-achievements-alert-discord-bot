@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 const data_path = 'src/data.json'
 import User from './models/User.js';
-import Game from './models/Game.js';
+import { getOrAddGame } from './steam/appData.js';
 
 /**
  * Loads users and games from the JSON DB, and attaches channel info to guilds.
@@ -9,7 +9,6 @@ import Game from './models/Game.js';
  */
 async function getInfosDB(guilds, client) {
     var users = [];
-    var games = [];
     let data;
     try {
         const jsonData = readFileSync(data_path);
@@ -22,9 +21,9 @@ async function getInfosDB(guilds, client) {
         Object.entries(data.users).forEach(([DiscordID, user]) => {
             users.push(new User(user.SteamID, DiscordID, user.DiscordNickname, user.Guilds, user.Color))
         })
-        Object.entries(data.games).forEach(([AppID, game]) => {
+        /*Object.entries(data.games).forEach(([AppID, game]) => {
             games.push(new Game(game.Name, AppID, game.Guilds, game.Aliases || []))
-        })
+        })*/
         guilds.forEach((guild) => {
             // Not clean: mutates input objects, should return new objects instead
             if (Object.keys(data.guilds).includes(guild.id)) {
@@ -40,7 +39,36 @@ async function getInfosDB(guilds, client) {
     } catch (err) {
         console.error("Error while processing data.json:", err.message);
     }
-    return [users, games]
+    return users
+}
+
+async function getGamesDB(client) {
+    try {
+        const jsonData = readFileSync(data_path);
+        const data = JSON.parse(jsonData);
+        if (!data.games) {
+            console.error("No games found in data.json");
+            return; // No games to process
+        }
+
+        for (const [AppID, gameData] of Object.entries(data.games)) {
+            try {
+                let game = await getOrAddGame(
+                    client.data,
+                    parseInt(AppID)
+                );
+                if (game) {
+                    game.guilds = gameData.Guilds || [];
+                    game.name = gameData.Name || '';
+                    game.aliases = gameData.Aliases || [];
+                }
+            } catch (error) {
+                console.warn(`Failed to add/update game ${AppID} from data.json: ${error.message}`);
+            }
+        }
+    } catch (err) {
+        console.error("Error while reading or parsing data.json in getGamesDB:", err.message);
+    }
 }
 
 /**
@@ -58,12 +86,10 @@ async function addGameDB(interaction, gameObject) {
             "RealName": gameObject.realName
         }
         writeFileSync(data_path, JSON.stringify(data, null, 2));
-        await interaction.editReply('Game added');
+        return true;
     } catch (error) {
         console.error("addGameDB error:", error.message);
-        interaction.editReply('Error').catch(e => {
-            console.error("Interaction reply failed:", e.message);
-        });
+        return false;
     }
 }
 
@@ -112,16 +138,13 @@ async function removeGameDB(gameID, guildId, nbGuildsGame, interaction) {
             data.games[gameID].Guilds = data.games[gameID].Guilds.filter(function (guild) { return guild != guildId })
         }
         writeFileSync(data_path, JSON.stringify(data, null, 2));
-        await interaction.reply('Game removed');
+        return true;
     } catch (error) {
         console.error("removeGameDB error:", error.message);
-        try {
-            await interaction.reply('Error');
-        } catch (e) {
-            console.error("Interaction reply failed:", e.message);
-        }
+        return false;
     }
 }
+
 
 /**
  * Removes a user from the DB, or just from a guild if shared.
@@ -188,4 +211,4 @@ async function changeChannelIdGuildDB(guildId, channelId) {
     }
 }
 
-export { addGameDB, addUserDB, removeGameDB, removePlayerDB, changeColorDB, changeChannelIdGuildDB, getInfosDB };
+export { addGameDB, addUserDB, removeGameDB, removePlayerDB, changeColorDB, changeChannelIdGuildDB, getInfosDB, getGamesDB };

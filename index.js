@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { Client, Collection, Events, GatewayIntentBits } from 'discord.js';
 import config from './config.json' with { type: 'json' };
 
-import { getInfosDB } from './src/connectAndQueryJSON.js';
+import { getInfosDB, getGamesDB } from './src/connectAndQueryJSON.js';
 import { loadAvatars } from './src/steam/api.js';
 import { listenForNewAchievements } from './src/steam/achievement_listener.js';
 import Guild from './src/models/Guild.js';
@@ -52,7 +52,8 @@ if (args.length > 0) {
 client.data = {
 	guilds: [],
 	users: [],
-	games: [],
+	games: new Map(),
+	invalidGames: [],
 	tLookback: t_lookback
 };
 
@@ -60,34 +61,31 @@ client.data = {
 client.once(Events.ClientReady, async c => {
 	try {
 		console.log(`Ready! Logged in as ${c.user.tag}`);
+
+		// 1. Initialisation de base
 		client.data.guilds = client.guilds.cache.map(guild => new Guild(guild.id));
-		[client.data.users, client.data.games] = await getInfosDB(client.data.guilds, client);
-		await loadAvatars(client.data.users) //to get avatars for each players
+		client.data.users = await getInfosDB(client.data.guilds, client);
+		await loadAvatars(client.data.users);
 
-		await Promise.all(client.data.users.map(async user => {
-			await user.updateOwnedGamesData()
-		}))
+		// 2. Récupération des jeux de la BDD
+		await getGamesDB(client);
 
-		await Promise.all([await Promise.all(client.data.games.map(async game => {
-			await Promise.all(client.data.users.map(async user => {
-				{
-					await game.updateAchievementsForUser(user, client.data.tLookback, true, config.lang)
-				}
-			}))
-			if (game.realName == '') {
-				await game.getRealName()
-			}
-		})),
+		console.table(Array.from(client.data.games.values()), ['id', 'realName', 'name', 'aliases', 'playtime']);
 
+		// 3. Enrichir les jeux avec les données des owned games des utilisateurs
+		for (const user of client.data.users) {
+			await user.updateOwnedGamesData(client.data);
+		}
+		console.log(`Invalid games : ${client.data.invalidGames}`);
 
-		])
+		// Affichage des tables et démarrage du listener
+		console.table(client.data.users);
+		console.log(`Current number of games in client.data.games: ${client.data.games.size}`);
+		console.table(Array.from(client.data.games.values()), ['id', 'realName', 'name', 'aliases', 'playtime']);
+		console.table(client.data.guilds);
 
-		console.table(client.data.users)
-		console.table(client.data.games)
-		console.table(client.data.guilds)
-		console.log("Games stats updated")
+		listenForNewAchievements(client.data);
 
-		listenForNewAchievements(client.data)
 	} catch (err) {
 		console.error("Fatal error during bot initialization:", err);
 		process.exit(1);

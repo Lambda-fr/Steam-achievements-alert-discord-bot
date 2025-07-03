@@ -39,7 +39,7 @@ async function displayNewAchievementImage(achievement, game, users, guild, autho
                 })
         ])
         const decal = 160
-        drawAvatarWithBorder(context, author.avatar, decal, 140, 32, 32, author.color);
+        context.drawImage(author.avatar, decal, 140, 32, 32);
 
         const players = Object.keys(achievement.playersUnlockTime);
         var playerObject;
@@ -53,15 +53,7 @@ async function displayNewAchievementImage(achievement, game, users, guild, autho
                 playerObject &&
                 playerObject.guilds.includes(guild.id)
             ) {
-                drawAvatarWithBorder(
-                    context,
-                    playerObject.avatar,
-                    decal + 40 * (index + 1),
-                    140,
-                    32,
-                    32,
-                    playerObject.color
-                );
+                context.drawImage(playerObject.avatar, decal + 40 * (index + 1), 140, 32, 32);
 
                 index = index + 1;
             }
@@ -190,9 +182,8 @@ async function displayAchievementsHistory(interaction, all_timestamps, datasets,
     };
     const image = await chart.renderToBuffer(configuration);
 
-    const attachment = new AttachmentBuilder(image)
-    await interaction.deferReply()
-    await interaction.editReply({ files: [attachment] })
+    const attachment = new AttachmentBuilder(image);
+    await interaction.editReply({ files: [attachment] });
 
 }
 async function displayProgressionBar(interaction, gameObject) {
@@ -235,12 +226,12 @@ async function displayProgressionBar(interaction, gameObject) {
         const name_display = gameObject.realName === '' ? gameObject.name : gameObject.realName
 
         users_nb_unlocked_not_null.forEach((u) => {
-            const ownedGame = u[0].ownedGames.find(game => String(game.id) === gameObject.id);
+            const ownedGame = u[0].ownedGames.find(gameIdInArray => gameIdInArray === gameObject.id);
             if (!ownedGame) {
                 console.warn(`Game ${gameObject.id} not found in ownedGames for user ${u[0].nickname}`);
                 u[0].playtimeForCurrentGame = 0; // Fallback
             } else {
-                u[0].playtimeForCurrentGame = ownedGame.playtime;
+                u[0].playtimeForCurrentGame = gameObject.playtime[u[0].steam_id];
             }
         })
 
@@ -257,7 +248,7 @@ async function displayProgressionBar(interaction, gameObject) {
             const barLength = 480
 
             users_nb_unlocked_not_null.forEach((v) => {
-                drawAvatarWithBorder(context, v[0].avatar, 25, 48 + n * 70, 50, 50, v[0].color);
+                context.drawImage(v[0].avatar, 25, 48 + n * 70, 50, 50);
                 context.font = '15px "Open Sans Regular"';
                 context.fillStyle = '#bfbfbf';
                 context.fillText(`${v[1]}/${gameObject.nbTotal} (${parseInt(100 * v[1] / gameObject.nbTotal)}%)`, 100 + barLength + 10, 71 + n * 70);
@@ -314,7 +305,7 @@ async function displayAchievementsList(achievements_locked, interaction, canvas_
             const globalPercentage_width = context.measureText(`(${a.object.globalPercentage}%)`).width
 
             a.playersWhoUnlocked.map(async (user_a, index) => {
-                drawAvatarWithBorder(context, user_a.avatar, 100 + title_width + globalPercentage_width + 20 + 40 * index, 46 + n * SPACE_BETWEEN, 30, 30, user_a.color);
+                context.drawImage(user_a.avatar, 100 + title_width + globalPercentage_width + 20 + 40 * index, 46 + n * SPACE_BETWEEN, 30, 30);
             })
             // context.fillText(txt, 100 + title_width + 10 + 40 * index, 68 + n * SPACE_BETWEEN);
 
@@ -390,7 +381,6 @@ async function displayLeaderboard(interaction, leaderboardData) {
             }
             const numberOfCompletedGames = entry.completedGames.length;
             if (numberOfCompletedGames > gamesPerLine) {
-                // If there are games, the bottom is determined by the last icon drawn
                 const numLinesOfGames = Math.ceil(numberOfCompletedGames / gamesPerLine);
                 calculatedTotalHeight += avatarYPadding + (numLinesOfGames * (iconSize + lineSpacing));
             }
@@ -409,8 +399,6 @@ async function displayLeaderboard(interaction, leaderboardData) {
         context.fillStyle = '#ffffff';
         context.fillText('Leaderboard - Games Completed', 25, 35);
 
-
-
         for (let i = 0; i < players_fraction.length; i++) {
             let currentYPosition = usersYPositions[i];
             const entry = players_fraction[i];
@@ -423,7 +411,7 @@ async function displayLeaderboard(interaction, leaderboardData) {
             context.fillText(`#${startRank + i}`, 25, currentYPosition + (avatarHeight / 2)); // Centered vertically with avatar
 
             // Avatar
-            drawAvatarWithBorder(context, user.avatar, 60, currentYPosition, avatarHeight, avatarHeight, user.color);
+            context.drawImage(user.avatar, 60, currentYPosition, avatarHeight, avatarHeight);
 
             // Nickname
             context.font = '20px "Open Sans Regular"';
@@ -441,6 +429,9 @@ async function displayLeaderboard(interaction, leaderboardData) {
             let iconCurrentX = 130;
             let iconCurrentY = currentYPosition + avatarYPadding; // Start below avatar block 
 
+            // Add a cache for loaded images to avoid redundant loads
+            const imageCache = {};
+
             for (let j = 0; j < entry.completedGames.length; j++) {
                 const game = entry.completedGames[j];
                 if (j > 0 && j % gamesPerLine === 0) {
@@ -450,14 +441,26 @@ async function displayLeaderboard(interaction, leaderboardData) {
                 }
 
                 try {
-                    const iconImage = await Canvas.loadImage(game.img);
-                    context.drawImage(iconImage, iconCurrentX, iconCurrentY, iconSize, iconSize);
+                    // Log the URL being loaded
+                    // Load image from URL if not already loaded
+                    if (game.img) {
+                        let imgObj;
+                        if (imageCache[game.img]) {
+                            imgObj = imageCache[game.img];
+                        } else {
+                            imgObj = await Canvas.loadImage(game.img);
+                            imageCache[game.img] = imgObj;
+                        }
+                        context.drawImage(imgObj, iconCurrentX, iconCurrentY, iconSize, iconSize);
+                    }
+
+
                 } catch (err) {
-                    console.warn(`Error loading game icon for user ${user.nickname}, game ${game.name}:`, err);
+                    console.warn(`Error loading game icon for user ${user.nickname}, game ${game.name}, url ${game.img}:`, err);
+                    // Optionally, draw a placeholder or skip
                 }
                 iconCurrentX += iconXOffset;
             }
-
         }
 
         return new AttachmentBuilder(canvas.toBuffer(), 'leaderboard.png');
@@ -475,7 +478,9 @@ async function displayLeaderboard(interaction, leaderboardData) {
             : [new ActionRowBuilder({ components: [forwardButton] })]
     });
 
-    if (canFitOnOnePage) return;
+    if (canFitOnOnePage) {
+        return;
+    }
 
     const collector = embedMessage.createMessageComponentCollector({ time: 172800000 });
 
@@ -501,15 +506,6 @@ async function displayLeaderboard(interaction, leaderboardData) {
     });
 }
 
-
-function drawAvatarWithBorder(context, avatar, x, y, w, h, color = '#ffffff') {
-    if (avatar) {
-        context.drawImage(avatar, x, y, w, h);
-        context.strokeStyle = color;
-        context.lineWidth = 2;
-        context.strokeRect(x, y, w, h);
-    }
-}
 
 module.exports = {
     displayAchievementsHistory,

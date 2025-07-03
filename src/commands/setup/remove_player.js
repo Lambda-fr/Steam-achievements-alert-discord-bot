@@ -19,7 +19,7 @@ export async function execute(interaction) {
 			}
 			removePlayerDB(discord_id, interaction.guildId, user.guilds.length, interaction);
 			if (user.guilds.length === 1) {
-				for (const game of interaction.client.data.games) {
+				for (const game of interaction.client.data.games.values()) {
 					for (const achievementID of Object.keys(game.achievements)) {
 						if (typeof game.achievements[achievementID][user.steam_id] != 'undefined') {
 							delete game.achievements[achievementID][user.steam_id];
