@@ -1,8 +1,8 @@
 class Guild {
     constructor(guild_id) {
         this.id = guild_id;
-        this.channel_id;
-        this.channel;
+        this.channel_id = null;
+        this.channel = null;
     }
 }
 

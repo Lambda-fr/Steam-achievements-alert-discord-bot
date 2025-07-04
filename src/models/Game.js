@@ -30,6 +30,7 @@ class Game {
             this.realName = playerAchievements.playerstats.gameName;
 
             let nbUnlockedAchievements = 0;
+            let nbNewAchievements = 0;
             let achievementsNeedIcons = false;
             for (const a of playerAchievements.playerstats.achievements) {
                 if (a.unlocktime !== 0) {
@@ -50,9 +51,9 @@ class Game {
                 if (a.unlocktime > lastScan) {
                     const lclId = `${this.id}_${a.apiname}`;
                     if (!user.displayedAchievements.includes(lclId)) {
-                        user.newAchievements.push({ object: this.achievements[a.apiname], gameId: this.id, pos: nbUnlockedAchievements });
+                        user.newAchievements.push({ object: this.achievements[a.apiname], gameId: this.id, pos: nbNewAchievements });
                         user.displayedAchievements.push(lclId);
-                        nbUnlockedAchievements++;
+                        nbNewAchievements++;
                     }
                 }
             }
@@ -63,7 +64,11 @@ class Game {
             }
             this.nbUnlocked[user.steam_id] = nbUnlockedAchievements;
             this.isCompleted100Percent[user.steam_id] = nbUnlockedAchievements === this.nbTotal;
-            console.log(`Achievements updated for user ${user.nickname} (${user.steam_id}) in game ${this.realName} (${this.id}): ${nbUnlockedAchievements}/${this.nbTotal} unlocked`);
+            if (nbNewAchievements > 0) {
+                console.log(`Found ${nbNewAchievements} new achievements for user ${user.steam_id} (${user.nickname}) in game ${this.id} (${this.realName}).`);
+            } else {
+                console.log(`Game ${this.id} (${this.realName}) updated for user ${user.steam_id} (${user.nickname}).`);
+            }
             return true;
 
         } catch (err) {
