@@ -1,6 +1,7 @@
 import { SlashCommandBuilder } from 'discord.js';
 import { addGameDB } from '../../connectAndQueryJSON.js';
 import { getOrAddGame } from '../../steam/appData.js';
+import { isGameIdValid } from '../../steam/api.js';
 
 export const data = new SlashCommandBuilder()
 	.setName('add_game')
@@ -24,14 +25,18 @@ export async function execute(interaction) {
 			return;
 		}
 
+		if (!(await isGameIdValid(game_id))) {
+			await interaction.editReply('Invalid game ID.');
+			return;
+		}
+
 		const gameObject = await getOrAddGame(
 			interaction.client.data,
 			game_id
 		);
 
 		if (!gameObject) {
-			await interaction.editReply('Game not found or not valid.');
-			return;
+			throw new Error();
 		}
 
 		// Update existing game's guilds and aliases
@@ -52,7 +57,7 @@ export async function execute(interaction) {
 		}
 		// Add aliases if they are not already present
 		aliases.forEach(alias => {
-			if (!gameObject.aliases.includes(alias)) {
+			if (!gameObject.aliases.includes(alias) && gameObject.name !== alias) {
 				gameObject.aliases.push(alias);
 			}
 		});

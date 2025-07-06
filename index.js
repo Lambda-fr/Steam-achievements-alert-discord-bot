@@ -53,7 +53,6 @@ client.data = {
 	guilds: [],
 	users: [],
 	games: new Map(),
-	invalidGames: [],
 	tLookback: t_lookback
 };
 
@@ -76,7 +75,6 @@ client.once(Events.ClientReady, async c => {
 		for (const user of client.data.users) {
 			await user.updateOwnedGamesData(client.data);
 		}
-		console.log(`Invalid games : ${client.data.invalidGames}`);
 
 		// Affichage des tables et démarrage du listener
 		console.table(client.data.users);

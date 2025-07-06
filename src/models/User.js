@@ -1,5 +1,6 @@
 import { getOwnedGames, getRecentlyPlayedGames, getPlayerAchievements, getSchemaForGame } from '../steam/api.js';
 import config from '../../config.json' with { type: 'json' };
+import { isGameIdValid } from '../steam/api.js';
 import { getOrAddGame } from '../steam/appData.js';
 
 class User {
@@ -22,14 +23,15 @@ class User {
         return false;
       }
       await Promise.all(value.response.games.map(async (gameData) => {
-
-        let game = await getOrAddGame(appData, gameData.appid, gameData.img_icon_url ? `http://media.steampowered.com/steamcommunity/public/images/apps/${gameData.appid}/${gameData.img_icon_url}.jpg` : null, this.steam_id);
-        if (game) {
-          if (!this.ownedGames.includes(game.id)) {
-            this.ownedGames.push(game.id);
+        if (await isGameIdValid(gameData.appid)) {
+          let game = await getOrAddGame(appData, gameData.appid, gameData.img_icon_url ? `http://media.steampowered.com/steamcommunity/public/images/apps/${gameData.appid}/${gameData.img_icon_url}.jpg` : null, this.steam_id);
+          if (game) {
+            if (!this.ownedGames.includes(game.id)) {
+              this.ownedGames.push(game.id);
+            }
+            //console.log(`Game ${game.id} (${gameData.appid}) added for user ${this.nickname} (${this.steam_id})`);
+            game.playtime[this.steam_id] = gameData.playtime_forever;
           }
-          //console.log(`Game ${game.id} (${gameData.appid}) added for user ${this.nickname} (${this.steam_id})`);
-          game.playtime[this.steam_id] = gameData.playtime_forever;
         }
 
       }));
@@ -51,10 +53,6 @@ class User {
 
       if (value.response && value.response.total_count > 0) {
         await Promise.all(value.response.games.map(async (gameData) => {
-          // Check if the gameId already exists in appData.games
-          if (appData.invalidGames.includes(parseInt(gameData.appid))) {
-            return;
-          }
           const gameFound = appData.games.get(parseInt(gameData.appid));
           if (gameFound) {
             //console.warn(`Game with ID ${gameId} already exists in appData.`);
@@ -68,7 +66,9 @@ class User {
               gameFound.owned = true;
             }
           } else {
-            gamesToAdd.push({ appid: gameData.appid, img_icon_url: gameData.img_icon_url ? `http://media.steampowered.com/steamcommunity/public/images/apps/${gameData.appid}/${gameData.img_icon_url}.jpg` : null, user: this, playtime: gameData.playtime_forever });
+            if (await isGameIdValid(gameData.appid)) {
+              gamesToAdd.push({ appid: gameData.appid, img_icon_url: gameData.img_icon_url ? `http://media.steampowered.com/steamcommunity/public/images/apps/${gameData.appid}/${gameData.img_icon_url}.jpg` : null, user: this, playtime: gameData.playtime_forever });
+            }
           }
           recentlyPlayedGames.push(`${gameData.appid} ${gameData.name ? gameData.name : ''}`);
 

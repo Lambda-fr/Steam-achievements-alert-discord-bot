@@ -1,21 +1,7 @@
-import { isGameIdValid } from './api.js';
 import Game from '../models/Game.js';
 
 async function getOrAddGame(appData, gameId, imgUrl = null, userId = null) {
     try {
-        // Check if the gameId is already in the invalidGames list
-        if (appData.invalidGames.includes(gameId)) {
-            //console.warn(`Game with ID ${gameId} is in the invalidGames list.`);
-            return null;
-        }
-
-        // If the gameId is not valid, log a warning and return null
-        if (!(await isGameIdValid(gameId))) {
-            //console.warn(`Game with ID ${gameId} is not valid.`);
-            appData.invalidGames.push(gameId);
-            return null;
-        }
-
         // Check if the gameId already exists in appData.games
         const gameFound = appData.games.get(parseInt(gameId));
         if (gameFound) {
@@ -46,7 +32,6 @@ async function getOrAddGame(appData, gameId, imgUrl = null, userId = null) {
         }
         return newGame;
     } catch (error) {
-        //console.error(`Error in getOrAddGame for gameId ${gameId}:`, error);
         return null;
 
     }

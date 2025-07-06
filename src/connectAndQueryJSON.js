@@ -2,6 +2,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 const data_path = 'src/data.json'
 import User from './models/User.js';
 import { getOrAddGame } from './steam/appData.js';
+import { isGameIdValid } from './steam/api.js';
 
 /**
  * Loads users and games from the JSON DB, and attaches channel info to guilds.
@@ -54,6 +55,10 @@ async function getGamesDB(client) {
 
         for (const [AppID, gameData] of Object.entries(data.games)) {
             try {
+                // Check if the game ID is valid
+                if (!(await isGameIdValid(parseInt(AppID)))) {
+                    throw new Error("Invalid game ID.");
+                }
                 let game = await getOrAddGame(
                     client.data,
                     parseInt(AppID)
