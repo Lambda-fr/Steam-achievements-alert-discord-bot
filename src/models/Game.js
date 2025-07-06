@@ -65,9 +65,7 @@ class Game {
             this.nbUnlocked[user.steam_id] = nbUnlockedAchievements;
             this.isCompleted100Percent[user.steam_id] = nbUnlockedAchievements === this.nbTotal;
             if (nbNewAchievements > 0) {
-                console.log(`Found ${nbNewAchievements} new achievements for user ${user.steam_id} (${user.nickname}) in game ${this.id} (${this.realName}).`);
-            } else {
-                console.log(`Game ${this.id} (${this.realName}) updated for user ${user.steam_id} (${user.nickname}).`);
+                console.log(`${nbNewAchievements} new achievements\t${this.id} (${this.realName})\t\t${user.steam_id} (${user.nickname})`);
             }
             return true;
 

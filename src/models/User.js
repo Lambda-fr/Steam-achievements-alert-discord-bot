@@ -76,7 +76,6 @@ class User {
       }
 
       console.log(`Recently played games [${this.nickname}] : ${recentlyPlayedGames.join(', ')}`);
-      console.log(`Games to add for ${this.nickname} (${this.steam_id}) : ${gamesToAdd.map(g => g.appid).join(', ')}`);
       return gamesToAdd;
 
     } catch (err) {

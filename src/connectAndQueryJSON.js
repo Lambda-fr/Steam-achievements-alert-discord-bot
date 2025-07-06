@@ -28,6 +28,7 @@ async function getInfosDB(guilds, client) {
             // Not clean: mutates input objects, should return new objects instead
             if (Object.keys(data.guilds).includes(guild.id)) {
                 guild.channel_id = data.guilds[guild.id].channelId
+                guild.display_all_achievements = data.guilds[guild.id].displayAllAchievements || false;
                 try {
                     guild.channel = client.guilds.cache.get(guild.id)?.channels.cache.find(c => c.id === guild.channel_id)
                 } catch (err) {
@@ -190,25 +191,27 @@ async function changeColorDB(userDiscordId, color) {
 }
 
 /**
- * Changes or sets the channel ID for a guild in the DB.
+ * Changes or sets the channel ID and display settings for a guild in the DB.
  */
-async function changeChannelIdGuildDB(guildId, channelId) {
+async function setGuildChannelAndDisplaySettingsDB(guildId, channelId, displayAllAchievements) {
     try {
         const jsonData = readFileSync(data_path);
         const data = JSON.parse(jsonData);
         if (Object.keys(data.guilds).includes(guildId)) {
             data.guilds[guildId].channelId = channelId
+            data.guilds[guildId].displayAllAchievements = displayAllAchievements
         }
         else {
             data.guilds[guildId] = {
-                "channelId": channelId
+                "channelId": channelId,
+                "displayAllAchievements": displayAllAchievements
             }
         }
         writeFileSync(data_path, JSON.stringify(data));
     }
     catch (error) {
-        console.error("changeChannelIdGuildDB error:", error.message);
+        console.error("setGuildChannelAndDisplaySettingsDB error:", error.message);
     }
 }
 
-export { addGameDB, addUserDB, removeGameDB, removePlayerDB, changeColorDB, changeChannelIdGuildDB, getInfosDB, getGamesDB };
+export { addGameDB, addUserDB, removeGameDB, removePlayerDB, changeColorDB, setGuildChannelAndDisplaySettingsDB, getInfosDB, getGamesDB };
