@@ -235,7 +235,6 @@ async function displayProgressionBar(interaction, gameObject) {
             }
         })
 
-        await interaction.deferReply();
         if (users_nb_unlocked_not_null.length > 0) {
             var n = 0;
 
@@ -319,7 +318,7 @@ async function displayAchievementsList(achievements_locked, interaction, canvas_
     const canFitOnOnePage = achievements_locked.length <= MAX_PAGE
     const slice_achievements = achievements_locked.slice(0, 0 + 5)
     const img_first = await get_embedded_img(slice_achievements, 1, slice_achievements.length)
-    const embedMessage = await interaction.channel.send({
+    const embedMessage = await interaction.editReply({
         embeds: [new EmbedBuilder().setTitle(`Showing ${canvas_title[1]} achievements ${1} -${slice_achievements.length} out of ${achievements_locked.length}`)],
         files: [img_first],
         components: canFitOnOnePage

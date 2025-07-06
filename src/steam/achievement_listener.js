@@ -34,7 +34,7 @@ async function updateAllUsersAchievements(appData) {
 
 async function processAndDisplayNewAchievements(appData) {
   const new_achievements = appData.users.map(user => user.newAchievements.reverse().map(a => [user, a])).flat(1); // Flatten the array to get a list of new achievements with user context
-  console.log(`Nb new achievements to display : ${new_achievements.length}`);
+  
   try {
     for (const newA of new_achievements) {
       for (const guild_id of newA[0].guilds) {

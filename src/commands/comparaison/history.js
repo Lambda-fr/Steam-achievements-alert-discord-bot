@@ -14,11 +14,11 @@ export async function execute(interaction) {
         const gameObject = Array.from(interaction.client.data.games.values()).find(game => game.name === game_name || game.aliases.includes(game_name));
 
         if (typeof gameObject === 'undefined') {
-            await interaction.reply('Game not found!');
+            await interaction.editReply('Game not found!');
             return;
         }
         if (!gameObject.guilds.includes(interaction.guildId)) {
-            await interaction.reply('Game not in the guild list!');
+            await interaction.editReply('Game not in the guild list!');
             return;
         }
 

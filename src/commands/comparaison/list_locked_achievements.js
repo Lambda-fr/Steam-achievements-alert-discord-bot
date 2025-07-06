@@ -17,19 +17,21 @@ export const data = new SlashCommandBuilder()
 		.setDescription('mention a player if you want to includes its locked achievements')
 		.setRequired(false));
 export async function execute(interaction) {
+	// Defer the reply to allow time for processing             
+	await interaction.deferReply();
 	const game_name = interaction.options.getString('game_name');
 	const gameObject = Array.from(interaction.client.data.games.values()).find(game => game.name === game_name || game.aliases.includes(game_name));
 	if (typeof gameObject === 'undefined') {
-		await interaction.reply('Game not found!');
+		await interaction.editReply('Game not found!');
 		return;
 	}
 	if (!gameObject.guilds.includes(interaction.guildId)) {
-		await interaction.reply('Game not in the guild list!');
+		await interaction.editReply('Game not in the guild list!');
 		return;
 	}
 	const userAuthor = interaction.client.data.users.find(user => user.discord_id === interaction.user.id);
 	if (typeof userAuthor === 'undefined') {
-		await interaction.reply("You are not in players list. Use */addplayer* command");
+		await interaction.editReply("You are not in players list. Use */addplayer* command");
 		return;
 	}
 
@@ -51,7 +53,6 @@ export async function execute(interaction) {
 	}
 
 	await gameObject.updateGlobalPercentage();
-	discordImageFunctions.displayProgressionBar(interaction, gameObject);
 	let validAchievements = gameObject.getLockedAchievements(userAuthor, interaction.guildId, interaction.client.data.users, other_users);
 	const canvas_title = `Locked for ${userAuthor.nickname} ${other_users.length > 0 ? `or ${other_users.map(user => user.nickname)}` : ``}`
 	const canvas_title2 = `locked`

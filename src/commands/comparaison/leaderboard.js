@@ -16,12 +16,6 @@ export async function execute(interaction) {
 
 async function updateLeaderboard(interaction) {
     try {
-        // Check if the user has permission to execute this command
-        if (!interaction.member.permissions.has('ManageGuild')) {
-            await interaction.reply('You do not have permission to use this command.');
-            return;
-        }
-
         // Defer the reply to allow time for processing             
         await interaction.deferReply();
         const guildUsers = interaction.client.data.users.filter(user => user.guilds.includes(interaction.guildId));
