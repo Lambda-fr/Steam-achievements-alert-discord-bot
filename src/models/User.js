@@ -64,6 +64,7 @@ class User {
             // If a userId is provided, update achievements for that user
             if (this.steam_id) {
               await gameFound.updateAchievementsForUser(appData, this.steam_id);
+              gameFound.playtime[this.steam_id] = gameData.playtime_forever;
               gameFound.owned = true;
             }
           } else {
