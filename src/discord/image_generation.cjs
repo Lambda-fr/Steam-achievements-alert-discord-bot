@@ -16,6 +16,26 @@ const gifs = [
     "https://tenor.com/view/mrandmissjackson-ariana-grande-michael-jackson-gif-20951576"
 ];
 
+function calculateWordWrapLines(context, text, maxWidth) {
+    if (!text) return 1;
+    const words = text.split(' ');
+    let line = '';
+    let lineCount = 1;
+
+    for (let i = 0; i < words.length; i++) {
+        const testLine = line + words[i] + ' ';
+        const metrics = context.measureText(testLine);
+        const testWidth = metrics.width;
+        if (testWidth > maxWidth && i > 0) {
+            lineCount++;
+            line = words[i] + ' ';
+        } else {
+            line = testLine;
+        }
+    }
+    return lineCount;
+}
+
 async function displayNewAchievementImage(achievement, game, users, guild, unlockingUser, position) {
     try {
         Canvas.registerFont(path.join(ASSETS_PATH, 'OpenSans-VariableFont_wdth,wght.ttf'), { family: 'Open Sans Regular' });
@@ -28,99 +48,108 @@ async function displayNewAchievementImage(achievement, game, users, guild, unloc
         );
 
         guildPlayersWhoUnlocked.sort((a, b) => {
-            if (a.steam_id === unlockingUser.steam_id) return -1;
-            if (b.steam_id === unlockingUser.steam_id) return 1;
-            return 0;
+            return achievement.playersUnlockTime[a.steam_id] - achievement.playersUnlockTime[b.steam_id];
         });
 
         const totalAvatars = guildPlayersWhoUnlocked.length;
-        const avatarsPerLine = 12;
-        const maxAvatarsOnLastLine = 9;
-
+        const avatarsPerLine = 10;
         const lineConfig = [];
         if (totalAvatars > 0) {
             let remaining = totalAvatars;
             while (remaining > 0) {
-                if (remaining > avatarsPerLine) {
-                    lineConfig.push(avatarsPerLine);
-                    remaining -= avatarsPerLine;
-                } else { // Last line
-                    if (remaining > maxAvatarsOnLastLine) {
-                        lineConfig.push(maxAvatarsOnLastLine);
-                        lineConfig.push(remaining - maxAvatarsOnLastLine);
-                    } else {
-                        lineConfig.push(remaining);
-                    }
-                    remaining = 0;
-                }
+                const lineCount = Math.min(remaining, avatarsPerLine);
+                lineConfig.push(lineCount);
+                remaining -= lineCount;
             }
         }
+        const avatarRows = lineConfig.length;
 
-        const numLines = lineConfig.length;
-        const canvasHeight = 190 + (numLines > 1 ? (numLines - 1) * 40 : 0);
+        // --- Calculate dynamic height based on description length ---
+        const tempCanvas = Canvas.createCanvas(1, 1); // Dummy canvas for context
+        const tempContext = tempCanvas.getContext('2d');
+        const descriptionFont = '20px "Open Sans Regular"';
+        const descriptionLineHeight = 22;
+        const descriptionMaxWidth = 525;
+        tempContext.font = descriptionFont;
+        const descriptionLines = calculateWordWrapLines(tempContext, achievement.achievementDescription, descriptionMaxWidth);
+
+        const topSectionHeight = 115; // Base height for icon, title, etc. before description
+        const descriptionHeight = descriptionLines * descriptionLineHeight;
+        const socialSectionBaseY = topSectionHeight + descriptionHeight;
+        const avatarsHeight = (avatarRows > 0) ? (60 + ((avatarRows - 1) * 40)) : 40; // 60 for "already unlocked by" + padding, then 40 per row
+
+        const canvasHeight = socialSectionBaseY + avatarsHeight;
 
         const canvas = Canvas.createCanvas(700, canvasHeight);
         const context = canvas.getContext('2d');
-        var attachment;
+
+        // Load images
         await Promise.all([
-            Canvas.loadImage(path.join(ASSETS_PATH, 'background.jpg'))
-                .then(img => {
-                    context.drawImage(img, 0, 0, canvas.width, canvas.height);
-                })
-                .catch(err => {
-                    console.error("Error loading background image:", err);
-                }),
-            Canvas.loadImage(achievement.icon)
-                .then(img => {
-                    context.drawImage(img, 25, 25, 100, 100);
-                })
-                .catch(err => {
-                    console.error("Error loading icon image:", err);
-                })
+            Canvas.loadImage(path.join(ASSETS_PATH, 'background.jpg')).then(img => {
+                context.drawImage(img, 0, 0, canvas.width, canvas.height);
+            }).catch(err => console.error("Error loading background image:", err)),
+            Canvas.loadImage(achievement.icon).then(img => {
+                context.drawImage(img, 25, 25, 100, 100);
+            }).catch(err => console.error("Error loading icon image:", err))
         ]);
 
-        const decal = 160;
-        context.font = '30px "Open Sans Regular"';
-        context.fillStyle = '#ffffff';
-        context.fillText(achievement.achievementName, 150, 45);
+        // --- Achievement Info Section (Top) ---
+        const textX = 145;
 
+        // Game Name
         context.font = '20px "Open Sans Regular"';
         context.fillStyle = '#bfbfbf';
-        printAtWordWrap(context, achievement.achievementDescription, 150, 72, 20, 525);
+        context.fillText(game.realName, textX, 45);
 
+        // Achievement Name
+        context.font = '30px "Open Sans Regular"';
+        context.fillStyle = '#ffffff';
+        context.fillText(achievement.achievementName, textX, 75);
+
+        // Achievement Description
+        context.font = descriptionFont;
+        context.fillStyle = '#bfbfbf';
+        printAtWordWrap(context, achievement.achievementDescription, textX, 105, descriptionLineHeight, descriptionMaxWidth);
+
+        // --- Social Section (Bottom) ---
+        const socialY = socialSectionBaseY;
+
+        // Rarity (Global Percentage)
         context.font = '22px "Open Sans Regular"';
         context.fillStyle = '#ffffff';
-        const txt2_1 = "Unlocked by ";
+        context.fillText("Rarity:", 25, socialY);
+        context.fillStyle = '#67d4f4';
+        context.fillText(`${(achievement.globalPercentage ?? 0)}% of players`, 25, socialY + 25);
 
-        context.fillText(txt2_1, 25, 165);
+
+        // Players who unlocked
+        context.font = '22px "Open Sans Regular"';
+        context.fillStyle = '#ffffff';
+        const unlockedByX = 280;
+        context.fillText("Already unlocked by:", unlockedByX, socialY);
 
         const avatarSize = 32;
         const avatarSpacing = 40;
-        const initialY = 140;
-        const lineSpacing = 40;
+        const initialAvatarY = socialY + 10;
+        const avatarLineSpacing = 40;
 
         let avatarIndex = 0;
-        for (let lineIndex = 0; lineIndex < numLines; lineIndex++) {
+        for (let lineIndex = 0; lineIndex < avatarRows; lineIndex++) {
             const avatarsOnThisLine = lineConfig[lineIndex];
             for (let indexOnLine = 0; indexOnLine < avatarsOnThisLine; indexOnLine++) {
                 const player = guildPlayersWhoUnlocked[avatarIndex];
                 if (!player) continue;
 
-                const x = decal + avatarSpacing * indexOnLine;
-                const y = initialY + lineIndex * lineSpacing;
+                const x = unlockedByX + avatarSpacing * indexOnLine;
+                const y = initialAvatarY + lineIndex * avatarLineSpacing;
+
+                // Draw avatar
                 context.drawImage(player.avatar, x, y, avatarSize, avatarSize);
                 avatarIndex++;
             }
         }
 
-        const textY = 165 + (numLines - 1) * lineSpacing;
-        const txt2_2 = `(${(achievement.globalPercentage ?? 0)}` + "% global)";
-
-        context.textAlign = 'right';
-        context.fillText(txt2_2, canvas.width - 25, textY);
-        context.textAlign = 'left';
-
-        attachment = new AttachmentBuilder(canvas.toBuffer());
+        const attachment = new AttachmentBuilder(canvas.toBuffer());
         const unlock_order = game.nbUnlocked[unlockingUser.steam_id] - position;
         const unlock_rate = unlock_order / game.nbTotal * 100;
         const game_finished = unlock_order === game.nbTotal;
