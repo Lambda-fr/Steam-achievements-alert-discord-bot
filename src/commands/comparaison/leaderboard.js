@@ -51,5 +51,4 @@ async function updateLeaderboard(interaction) {
         console.error('Error updating leaderboard:', error);
         await interaction.editReply('An error occurred while updating the leaderboard. Please try again later.');
     }
-    await interaction.editReply('Leaderboard updated successfully!');
 }

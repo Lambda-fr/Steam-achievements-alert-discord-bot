@@ -16,16 +16,56 @@ const gifs = [
     "https://tenor.com/view/mrandmissjackson-ariana-grande-michael-jackson-gif-20951576"
 ];
 
-async function displayNewAchievementImage(achievement, game, users, guild, author, position) {
+async function displayNewAchievementImage(achievement, game, users, guild, unlockingUser, position) {
     try {
-        Canvas.registerFont(path.join(ASSETS_PATH, 'OpenSans-VariableFont_wdth,wght.ttf'), { family: 'Open Sans Regular' })
-        const canvas = Canvas.createCanvas(700, 190);
+        Canvas.registerFont(path.join(ASSETS_PATH, 'OpenSans-VariableFont_wdth,wght.ttf'), { family: 'Open Sans Regular' });
+
+        const players = Object.keys(achievement.playersUnlockTime);
+        const guildPlayersWhoUnlocked = users.filter(u =>
+            players.includes(u.steam_id) &&
+            achievement.playersUnlockTime[u.steam_id] != 0 &&
+            u.guilds.includes(guild.id)
+        );
+
+        guildPlayersWhoUnlocked.sort((a, b) => {
+            if (a.steam_id === unlockingUser.steam_id) return -1;
+            if (b.steam_id === unlockingUser.steam_id) return 1;
+            return 0;
+        });
+
+        const totalAvatars = guildPlayersWhoUnlocked.length;
+        const avatarsPerLine = 12;
+        const maxAvatarsOnLastLine = 9;
+
+        const lineConfig = [];
+        if (totalAvatars > 0) {
+            let remaining = totalAvatars;
+            while (remaining > 0) {
+                if (remaining > avatarsPerLine) {
+                    lineConfig.push(avatarsPerLine);
+                    remaining -= avatarsPerLine;
+                } else { // Last line
+                    if (remaining > maxAvatarsOnLastLine) {
+                        lineConfig.push(maxAvatarsOnLastLine);
+                        lineConfig.push(remaining - maxAvatarsOnLastLine);
+                    } else {
+                        lineConfig.push(remaining);
+                    }
+                    remaining = 0;
+                }
+            }
+        }
+
+        const numLines = lineConfig.length;
+        const canvasHeight = 190 + (numLines > 1 ? (numLines - 1) * 40 : 0);
+
+        const canvas = Canvas.createCanvas(700, canvasHeight);
         const context = canvas.getContext('2d');
         var attachment;
         await Promise.all([
             Canvas.loadImage(path.join(ASSETS_PATH, 'background.jpg'))
                 .then(img => {
-                    context.drawImage(img, 0, 0);
+                    context.drawImage(img, 0, 0, canvas.width, canvas.height);
                 })
                 .catch(err => {
                     console.error("Error loading background image:", err);
@@ -37,53 +77,60 @@ async function displayNewAchievementImage(achievement, game, users, guild, autho
                 .catch(err => {
                     console.error("Error loading icon image:", err);
                 })
-        ])
-        const decal = 160
-        context.drawImage(author.avatar, decal, 140, 32, 32);
+        ]);
 
-        const players = Object.keys(achievement.playersUnlockTime);
-        var playerObject;
-        var index = 0;
-        for (const player of players) {
-            playerObject = users.find(u => u.steam_id === player)
-            //if it's not the user who triggered the achievement, if he unlocked it, and if he's in the guild user list
-            if (
-                player != author.steam_id &&
-                achievement.playersUnlockTime[player] != 0 &&
-                playerObject &&
-                playerObject.guilds.includes(guild.id)
-            ) {
-                context.drawImage(playerObject.avatar, decal + 40 * (index + 1), 140, 32, 32);
-
-                index = index + 1;
-            }
-        }
+        const decal = 160;
         context.font = '30px "Open Sans Regular"';
         context.fillStyle = '#ffffff';
         context.fillText(achievement.achievementName, 150, 45);
 
         context.font = '20px "Open Sans Regular"';
         context.fillStyle = '#bfbfbf';
-        printAtWordWrap(context, achievement.achievementDescription, 150, 72, 20, 525)
+        printAtWordWrap(context, achievement.achievementDescription, 150, 72, 20, 525);
 
         context.font = '22px "Open Sans Regular"';
         context.fillStyle = '#ffffff';
         const txt2_1 = "Unlocked by ";
-        const txt2_2 = "and by " + (achievement.globalPercentage ?? 0) + "% of players.";
-        context.fillText(txt2_1, 25, 165);
-        context.fillText(txt2_2, decal + (index + 1) * 40, 165);
 
-        attachment = new AttachmentBuilder(canvas.toBuffer())
-        const unlock_order = game.nbUnlocked[author.steam_id] - position;
+        context.fillText(txt2_1, 25, 165);
+
+        const avatarSize = 32;
+        const avatarSpacing = 40;
+        const initialY = 140;
+        const lineSpacing = 40;
+
+        let avatarIndex = 0;
+        for (let lineIndex = 0; lineIndex < numLines; lineIndex++) {
+            const avatarsOnThisLine = lineConfig[lineIndex];
+            for (let indexOnLine = 0; indexOnLine < avatarsOnThisLine; indexOnLine++) {
+                const player = guildPlayersWhoUnlocked[avatarIndex];
+                if (!player) continue;
+
+                const x = decal + avatarSpacing * indexOnLine;
+                const y = initialY + lineIndex * lineSpacing;
+                context.drawImage(player.avatar, x, y, avatarSize, avatarSize);
+                avatarIndex++;
+            }
+        }
+
+        const textY = 165 + (numLines - 1) * lineSpacing;
+        const txt2_2 = `(${(achievement.globalPercentage ?? 0)}` + "% global)";
+
+        context.textAlign = 'right';
+        context.fillText(txt2_2, canvas.width - 25, textY);
+        context.textAlign = 'left';
+
+        attachment = new AttachmentBuilder(canvas.toBuffer());
+        const unlock_order = game.nbUnlocked[unlockingUser.steam_id] - position;
         const unlock_rate = unlock_order / game.nbTotal * 100;
-        const game_finished = unlock_order === game.nbTotal
-        await guild.channel.send({ content: `${game_finished ? '🎉' : ''} <@${author.discord_id}> unlocked an achievement on ${game.realName}. Progress : (${unlock_order}/${game.nbTotal}) [${unlock_rate.toFixed(2)}%] ${game_finished ? '🎉' : ''}`, files: [attachment] })
+        const game_finished = unlock_order === game.nbTotal;
+        await guild.channel.send({ content: `${game_finished ? '🎉' : ''} <@${unlockingUser.discord_id}> unlocked an achievement on ${game.realName}. Progress : (${unlock_order}/${game.nbTotal}) [${unlock_rate.toFixed(2)}%] ${game_finished ? '🎉' : ''}`, files: [attachment] });
         if (game_finished) {
-            guild.channel.send(gifs[Math.floor(Math.random() * gifs.length)])
+            guild.channel.send(gifs[Math.floor(Math.random() * gifs.length)]);
         }
     }
     catch (err) {
-        console.error(`Error displaying new achievement for ${author.nickname} (${author.steam_id}) in game ${game.realName}:`, err);
+        console.error(`Error displaying new achievement for ${unlockingUser.nickname} (${unlockingUser.steam_id}) in game ${game.realName}:`, err);
     }
 }
 
