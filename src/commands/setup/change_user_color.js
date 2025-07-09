@@ -24,7 +24,7 @@ export async function execute(interaction) {
     try {
         if (userObject) {
             changeColorDB(discord_id, color);
-            userObject.color = color;
+            userObject.color = color === '#FFFFFF' ? '#FEFEFE' : color; // If color is white, change to light gray
             await interaction.reply('Player color updated');
             return;
         }

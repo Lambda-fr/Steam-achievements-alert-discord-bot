@@ -164,7 +164,7 @@ async function displayNewAchievementImage(achievement, game, users, guild, unloc
     }
 }
 
-async function displayAchievementsHistory(interaction, all_timestamps, datasets, realName) {
+async function displayAchievementsHistory(interaction, all_timestamps, datasets, realName, y_min = 0) {
     delete require.cache[require.resolve('chartjs-adapter-moment')]
     require('chartjs-adapter-moment')
 
@@ -177,15 +177,15 @@ async function displayAchievementsHistory(interaction, all_timestamps, datasets,
         type: "line",
         data: {
             labels: all_timestamps,
-            datasets: datasets.map(dataset => ({
-                ...dataset,
-                borderWidth: 3
-            }))
+            datasets: datasets
         },
         options: {
             layout: {
                 padding: {
-                    right: 20
+                    right: 40, // Increase padding for labels
+                    left: 20,
+                    top: 20,
+                    bottom: 20
                 }
             },
             scales: {
@@ -210,6 +210,7 @@ async function displayAchievementsHistory(interaction, all_timestamps, datasets,
                     }
                 },
                 y: {
+                    min: y_min > 5 ? y_min - 5 : 0, // Start y-axis just below the minimum value, with a margin
                     title: {
                         display: true,
                         text: 'Number of achievements unlocked',
@@ -219,7 +220,8 @@ async function displayAchievementsHistory(interaction, all_timestamps, datasets,
                         }
                     },
                     ticks: {
-                        color: '#afb0b7'
+                        color: '#afb0b7',
+                        precision: 0 // Ensure only whole numbers are displayed
                     },
                     grid: {
                         display: true,
@@ -231,7 +233,8 @@ async function displayAchievementsHistory(interaction, all_timestamps, datasets,
             },
             elements: {
                 point: {
-                    radius: 0
+                    radius: 0, // Hide points
+                    hoverRadius: 0 // Hide points on hover
                 }
             },
             plugins: {
