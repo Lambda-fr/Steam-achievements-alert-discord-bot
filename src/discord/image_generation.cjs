@@ -40,6 +40,8 @@ async function displayNewAchievementImage(achievement, game, users, guild, unloc
     try {
         Canvas.registerFont(path.join(ASSETS_PATH, 'OpenSans-VariableFont_wdth,wght.ttf'), { family: 'Open Sans Regular' });
 
+        const isRare = (achievement.globalPercentage ?? 100) < 3;
+
         const players = Object.keys(achievement.playersUnlockTime);
         const guildPlayersWhoUnlocked = users.filter(u =>
             players.includes(u.steam_id) &&
@@ -64,8 +66,7 @@ async function displayNewAchievementImage(achievement, game, users, guild, unloc
         }
         const avatarRows = lineConfig.length;
 
-        // --- Calculate dynamic height based on description length ---
-        const tempCanvas = Canvas.createCanvas(1, 1); // Dummy canvas for context
+        const tempCanvas = Canvas.createCanvas(1, 1);
         const tempContext = tempCanvas.getContext('2d');
         const descriptionFont = '20px "Open Sans Regular"';
         const descriptionLineHeight = 22;
@@ -73,56 +74,53 @@ async function displayNewAchievementImage(achievement, game, users, guild, unloc
         tempContext.font = descriptionFont;
         const descriptionLines = calculateWordWrapLines(tempContext, achievement.achievementDescription, descriptionMaxWidth);
 
-        const topSectionHeight = 115; // Base height for icon, title, etc. before description
+        const topSectionHeight = 115;
         const descriptionHeight = descriptionLines * descriptionLineHeight;
         const socialSectionBaseY = topSectionHeight + descriptionHeight;
-        const avatarsHeight = (avatarRows > 0) ? (60 + ((avatarRows - 1) * 40)) : 40; // 60 for "already unlocked by" + padding, then 40 per row
+        const avatarsHeight = (avatarRows > 0) ? (60 + ((avatarRows - 1) * 40)) : 40;
 
         const canvasHeight = socialSectionBaseY + avatarsHeight;
 
         const canvas = Canvas.createCanvas(700, canvasHeight);
         const context = canvas.getContext('2d');
 
-        // Load images
         await Promise.all([
             Canvas.loadImage(path.join(ASSETS_PATH, 'background.jpg')).then(img => {
                 context.drawImage(img, 0, 0, canvas.width, canvas.height);
             }).catch(err => console.error("Error loading background image:", err)),
-            Canvas.loadImage(achievement.icon).then(img => {
+            Canvas.loadImage(achievement.icon).then(async (img) => {
+                if (isRare) {
+                    context.shadowColor = '#FFD700';
+                    context.shadowBlur = 20;
+                    context.strokeStyle = '#FFD700';
+                    context.lineWidth = 4;
+                    context.strokeRect(23, 23, 104, 104);
+                    context.shadowBlur = 0; // Reset shadow for other elements
+                }
                 context.drawImage(img, 25, 25, 100, 100);
             }).catch(err => console.error("Error loading icon image:", err))
         ]);
 
-        // --- Achievement Info Section (Top) ---
         const textX = 145;
-
-        // Game Name
         context.font = '20px "Open Sans Regular"';
         context.fillStyle = '#bfbfbf';
         context.fillText(game.realName, textX, 45);
 
-        // Achievement Name
         context.font = '30px "Open Sans Regular"';
         context.fillStyle = '#ffffff';
         context.fillText(achievement.achievementName, textX, 75);
 
-        // Achievement Description
         context.font = descriptionFont;
         context.fillStyle = '#bfbfbf';
         printAtWordWrap(context, achievement.achievementDescription, textX, 105, descriptionLineHeight, descriptionMaxWidth);
 
-        // --- Social Section (Bottom) ---
         const socialY = socialSectionBaseY;
-
-        // Rarity (Global Percentage)
         context.font = '22px "Open Sans Regular"';
         context.fillStyle = '#ffffff';
         context.fillText("Rarity:", 25, socialY);
-        context.fillStyle = '#67d4f4';
-        context.fillText(`${(achievement.globalPercentage ?? 0)}% of players`, 25, socialY + 25);
+        context.fillStyle = isRare ? '#FFD700' : '#67d4f4';
+        context.fillText(`${(achievement.globalPercentage ?? 0)}% of global players`, 25, socialY + 25);
 
-
-        // Players who unlocked
         context.font = '22px "Open Sans Regular"';
         context.fillStyle = '#ffffff';
         const unlockedByX = 280;
@@ -143,7 +141,6 @@ async function displayNewAchievementImage(achievement, game, users, guild, unloc
                 const x = unlockedByX + avatarSpacing * indexOnLine;
                 const y = initialAvatarY + lineIndex * avatarLineSpacing;
 
-                // Draw avatar
                 context.drawImage(player.avatar, x, y, avatarSize, avatarSize);
                 avatarIndex++;
             }
@@ -153,7 +150,11 @@ async function displayNewAchievementImage(achievement, game, users, guild, unloc
         const unlock_order = game.nbUnlocked[unlockingUser.steam_id] - position;
         const unlock_rate = unlock_order / game.nbTotal * 100;
         const game_finished = unlock_order === game.nbTotal;
-        await guild.channel.send({ content: `${game_finished ? '🎉' : ''} <@${unlockingUser.discord_id}> unlocked an achievement on ${game.realName}. Progress : (${unlock_order}/${game.nbTotal}) [${unlock_rate.toFixed(2)}%] ${game_finished ? '🎉' : ''}`, files: [attachment] });
+
+        let messageContent = `${game_finished ? '🎉' : ''} <@${unlockingUser.discord_id}> unlocked an achievement on ${game.realName}. Progress : (${unlock_order}/${game.nbTotal}) [${unlock_rate.toFixed(2)}%] ${game_finished ? '🎉' : ''}`;
+
+
+        await guild.channel.send({ content: messageContent, files: [attachment] });
         if (game_finished) {
             guild.channel.send(gifs[Math.floor(Math.random() * gifs.length)]);
         }
