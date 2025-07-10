@@ -18,7 +18,13 @@ export const data = new SlashCommandBuilder()
             { name: 'Last 3 years', value: '1095d' },
             { name: 'Last 5 years', value: '1825d' },
             { name: 'All time', value: 'all' },
-        ));
+        ))
+    .addUserOption(option => option.setName('player1').setDescription('First player to compare').setRequired(false))
+    .addUserOption(option => option.setName('player2').setDescription('Second player to compare').setRequired(false))
+    .addUserOption(option => option.setName('player3').setDescription('Third player to compare').setRequired(false))
+    .addUserOption(option => option.setName('player4').setDescription('Fourth player to compare').setRequired(false))
+    .addUserOption(option => option.setName('player5').setDescription('Fifth player to compare').setRequired(false));
+
 export async function execute(interaction) {
     try {
         await interaction.deferReply()
@@ -36,7 +42,23 @@ export async function execute(interaction) {
             return;
         }
 
-        let [all_timestamps, datasets, gameRealName] = gameObject.getAchievementsHistory(interaction.guildId, interaction.client.data.users);
+        // --- Player Filtering ---
+        const specifiedUsers = [
+            interaction.options.getUser('player1'),
+            interaction.options.getUser('player2'),
+            interaction.options.getUser('player3'),
+            interaction.options.getUser('player4'),
+            interaction.options.getUser('player5')
+        ].filter(Boolean); // Filter out null/undefined values
+
+        let usersToDisplay = interaction.client.data.users;
+        if (specifiedUsers.length > 0) {
+            const specifiedDiscordIds = specifiedUsers.map(u => u.id);
+            usersToDisplay = interaction.client.data.users.filter(u => specifiedDiscordIds.includes(u.discord_id));
+        }
+        // --- End Player Filtering ---
+
+        let [all_timestamps, datasets, gameRealName] = gameObject.getAchievementsHistory(interaction.guildId, usersToDisplay);
         let y_min = 0; // Default y-axis minimum
 
         if (period !== 'all') {
@@ -63,7 +85,6 @@ export async function execute(interaction) {
             all_timestamps = sliced_timestamps;
             datasets = sliced_datasets;
 
-            // Calculate the minimum value for the y-axis
             const allDataPoints = datasets.flatMap(d => d.data);
             if (allDataPoints.length > 0) {
                 y_min = Math.min(...allDataPoints);
