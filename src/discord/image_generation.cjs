@@ -76,7 +76,7 @@ async function displayNewAchievementImage(achievement, game, users, guild, unloc
         const descriptionLines = calculateWordWrapLines(tempContext, achievement.achievementDescription, descriptionMaxWidth);
 
         const topSectionHeight = 115;
-        const descriptionHeight = descriptionLines * descriptionLineHeight;
+        const descriptionHeight = (descriptionLines > 2 ? descriptionLines : 2) * descriptionLineHeight;
         const socialSectionBaseY = topSectionHeight + descriptionHeight;
         const avatarsHeight = (avatarRows > 0) ? (60 + ((avatarRows - 1) * 40)) : 40;
 
