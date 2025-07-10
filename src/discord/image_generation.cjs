@@ -663,8 +663,11 @@ async function displayAchievementActivityReport(interaction, period) {
             case 'last_month':
                 startDate = endDate - (30 * 24 * 60 * 60);
                 break;
+            case 'last_year':
+                startDate = endDate - (365 * 24 * 60 * 60);
+                break;
             default:
-                await interaction.editReply('Invalid period specified. Use last_24h, last_week, or last_month.');
+                await interaction.editReply('Invalid period specified. Use last_24h, last_week, last_month, or last_year.');
                 return;
         }
 
