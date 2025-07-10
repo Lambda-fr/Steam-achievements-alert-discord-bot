@@ -562,7 +562,7 @@ async function displayLeaderboard(interaction, leaderboardData) {
             // Total Achievements
             context.font = '18px "Open Sans Regular"';
             context.fillStyle = '#bfbfbf';
-            context.fillText(`Total achievements unlocked : ${totalAchievements}`, 130, currentY + 70);
+            context.fillText(`Total unlocked achievements: ${totalAchievements}`, 130, currentY + 70);
 
             // Completed Games Count
             context.font = '18px "Open Sans Regular"';
@@ -646,11 +646,190 @@ async function displayLeaderboard(interaction, leaderboardData) {
     });
 }
 
+async function displayAchievementActivityReport(interaction, period) {
+    try {
+        Canvas.registerFont(path.join(ASSETS_PATH, 'OpenSans-VariableFont_wdth,wght.ttf'), { family: 'Open Sans Regular' });
+
+        let startDate;
+        const endDate = parseInt(Date.now() / 1000); // Current time in seconds
+
+        switch (period) {
+            case 'last_24h':
+                startDate = endDate - (24 * 60 * 60);
+                break;
+            case 'last_week':
+                startDate = endDate - (7 * 24 * 60 * 60);
+                break;
+            case 'last_month':
+                startDate = endDate - (30 * 24 * 60 * 60);
+                break;
+            default:
+                await interaction.editReply('Invalid period specified. Use last_24h, last_week, or last_month.');
+                return;
+        }
+
+        const usersData = interaction.client.data.users.filter(user => user.guilds.includes(interaction.guildId));
+        const allGames = interaction.client.data.games; // Map type
+        const playerActivity = {}; // { steam_id: { user: {}, games: { game_id: { game: {}, achievements: [] } } } }
+        for (const user of usersData) {
+            playerActivity[user.steam_id] = {
+                user: user,
+                games: {},
+                nbAchievements: 0
+            };
+
+            // Iterate through owned games to find achievements unlocked by this user in the period
+            for (const gameId of user.ownedGames) {
+                const game = allGames.get(gameId);
+                if (!game) continue; // Skip if game data is not found (e.g., game not in allGames cache)
+                if (game.achievements) {
+                    for (const achievementId in game.achievements) {
+                        const achievement = game.achievements[achievementId];
+                        if (achievement.playersUnlockTime && achievement.playersUnlockTime[user.steam_id]) {
+                            const unlockTime = achievement.playersUnlockTime[user.steam_id];
+                            if (unlockTime >= startDate && unlockTime <= endDate) {
+                                if (!playerActivity[user.steam_id].games[game.id]) {
+                                    playerActivity[user.steam_id].games[game.id] = {
+                                        game: game,
+                                        achievements: []
+                                    };
+                                }
+                                playerActivity[user.steam_id].games[game.id].achievements.push(achievement);
+                                playerActivity[user.steam_id].nbAchievements++;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Filter out players with no activity in the period
+        const activePlayers = Object.values(playerActivity).filter(player => Object.keys(player.games).length > 0);
+
+        // Sort active players by the number of achievements unlocked in descending order
+        activePlayers.sort((a, b) => b.nbAchievements - a.nbAchievements);
+
+        if (activePlayers.length === 0) {
+            await interaction.editReply(`No achievement activity found for the last ${period.replace('last_', '').replace('_', ' ')}.`);
+            return;
+        }
+
+        // --- Canvas Drawing Logic ---
+        const background = await Canvas.loadImage(path.join(ASSETS_PATH, 'background.jpg'));
+
+        // Calculate dynamic canvas height
+        let totalHeight = 70; // Title height
+        const playerSectionPadding = 30;
+        const gameSectionPadding = 15;
+        const achievementIconSize = 30;
+        const achievementIconSpacing = 5;
+        const achievementsPerLine = 15; // Max icons per line
+        const gameIconSize = 40; // Size for game icons
+
+        for (const player of activePlayers) {
+            totalHeight += 50; // Player name and avatar line
+            for (const gameId in player.games) {
+                const gameEntry = player.games[gameId];
+                const numAchievements = gameEntry.achievements.length;
+                totalHeight += gameIconSize + 5; // Space for game icon and text, plus a small padding
+                if (numAchievements > 0) {
+                    const numLines = Math.ceil(numAchievements / achievementsPerLine);
+                    totalHeight += numLines * (achievementIconSize + achievementIconSpacing);
+                }
+                totalHeight += gameSectionPadding;
+            }
+            totalHeight += playerSectionPadding;
+        }
+
+        const canvas = Canvas.createCanvas(700, totalHeight);
+        const context = canvas.getContext('2d');
+        context.drawImage(background, 0, 0, canvas.width, canvas.height);
+
+        context.font = '30px "Open Sans Regular"';
+        context.fillStyle = '#ffffff';
+        context.fillText(`Achievement Activity - Last ${period.replace('last_', '').replace('_', ' ')}`, 25, 45);
+
+        let currentY = 70;
+
+        for (const player of activePlayers) {
+            // Player header
+            context.font = '25px "Open Sans Regular"';
+            context.fillStyle = '#ffffff';
+            context.drawImage(player.user.avatar, 25, currentY, 50, 50);
+            context.fillText(`${player.user.nickname} unlocked ${player.nbAchievements} achievements:`, 90, currentY + 35);
+            currentY += 60;
+
+            for (const gameId in player.games) {
+                const gameEntry = player.games[gameId];
+                const numAchievements = gameEntry.achievements.length;
+
+                // Game icon and line
+                let gameIconX = 50;
+                let gameTextX = gameIconX + gameIconSize + 10; // Text starts after icon + padding
+                let gameLineY = currentY + gameIconSize / 2 + 5; // Vertically center with icon
+
+                try {
+                    if (gameEntry.game.img) {
+                        const gameIconImg = await Canvas.loadImage(gameEntry.game.img);
+                        context.drawImage(gameIconImg, gameIconX, currentY, gameIconSize, gameIconSize);
+                    }
+                } catch (err) {
+                    console.warn(`Error loading game icon for ${gameEntry.game.realName}:`, err);
+                }
+
+                context.font = '20px "Open Sans Regular"';
+                context.fillStyle = '#bfbfbf';
+                context.fillText(`${numAchievements} achievement${numAchievements === 1 ? '' : 's'} in ${gameEntry.game.realName}:`, gameTextX, gameLineY);
+                currentY += gameIconSize + 5; // Move Y past game icon and text
+
+                // Achievement icons
+                let iconCurrentX = 110; // Shifted to the right
+                let iconCurrentY = currentY;
+
+                for (let j = 0; j < numAchievements; j++) {
+                    const achievement = gameEntry.achievements[j];
+                    if (j > 0 && j % achievementsPerLine === 0) {
+                        iconCurrentX = 110;
+                        iconCurrentY += achievementIconSize + achievementIconSpacing;
+                    }
+                    try {
+                        const iconImg = await Canvas.loadImage(achievement.icon);
+                        context.drawImage(iconImg, iconCurrentX, iconCurrentY, achievementIconSize, achievementIconSize);
+                    } catch (err) {
+                        console.warn(`Error loading achievement icon for ${achievement.achievementName}:`, err);
+                    }
+                    iconCurrentX += achievementIconSize + achievementIconSpacing;
+                }
+                currentY = iconCurrentY + achievementIconSize + gameSectionPadding;
+            }
+            currentY += playerSectionPadding;
+        }
+
+        const attachment = new AttachmentBuilder(canvas.toBuffer(), 'achievement_activity_report.png');
+        await interaction.editReply({ files: [attachment] });
+
+    } catch (err) {
+        console.error('Error generating achievement activity report:', err);
+        await interaction.editReply('An error occurred while generating the report.');
+    }
+}
+
 
 module.exports = {
     displayAchievementsHistory,
     displayProgressionBar,
     displayAchievementsList,
     displayNewAchievementImage,
-    displayLeaderboard
+    displayLeaderboard,
+    displayAchievementActivityReport
+};
+
+
+module.exports = {
+    displayAchievementsHistory,
+    displayProgressionBar,
+    displayAchievementsList,
+    displayNewAchievementImage,
+    displayLeaderboard,
+    displayAchievementActivityReport
 };
