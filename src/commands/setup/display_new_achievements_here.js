@@ -1,5 +1,5 @@
 import { SlashCommandBuilder } from 'discord.js';
-import { setGuildChannelAndDisplaySettingsDB } from '../../connectAndQueryJSON.js';
+import { saveGuildDataDB } from '../../connectAndQueryJSON.js';
 
 export const data = new SlashCommandBuilder()
     .setName('display_new_achievements_here')
@@ -16,8 +16,8 @@ export async function execute(interaction) {
             guild.channel_id = interaction.channelId;
             guild.channel = interaction.channel;
             guild.display_all_achievements = displayAll;
+            saveGuildDataDB(guild);
         }
-        setGuildChannelAndDisplaySettingsDB(interaction.guildId, interaction.channelId, displayAll);
     });
     console.table(interaction.client.data.guilds);
 }

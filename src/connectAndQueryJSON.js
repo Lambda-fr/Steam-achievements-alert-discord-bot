@@ -30,14 +30,17 @@ async function getInfosDB(guilds, client) {
             if (Object.keys(data.guilds).includes(guild.id)) {
                 guild.channel_id = data.guilds[guild.id].channelId
                 guild.display_all_achievements = data.guilds[guild.id].displayAllAchievements || false;
-                try {
-                    guild.channel = client.guilds.cache.get(guild.id)?.channels.cache.find(c => c.id === guild.channel_id)
-                } catch (err) {
-                    console.error(`Error finding channel for guild ${guild.id}:`, err.message);
-                    guild.channel = null;
-                }
+                guild.report_enabled = data.guilds[guild.id].report_enabled || false;
+                guild.report_interval = data.guilds[guild.id].report_interval || null;
+                guild.next_report_timestamp = data.guilds[guild.id].next_report_timestamp || null;
             }
-        })
+            try {
+                guild.channel = client.guilds.cache.get(guild.id)?.channels.cache.find(c => c.id === guild.channel_id)
+            } catch (err) {
+                console.error(`Error finding channel for guild ${guild.id}:`, err.message);
+                guild.channel = null;
+            }
+        });
     } catch (err) {
         console.error("Error while processing data.json:", err.message);
     }
@@ -195,28 +198,25 @@ async function changeColorDB(userDiscordId, color) {
     }
 }
 
-/**
- * Changes or sets the channel ID and display settings for a guild in the DB.
- */
-async function setGuildChannelAndDisplaySettingsDB(guildId, channelId, displayAllAchievements) {
+async function saveGuildDataDB(guildData) {
     try {
         const jsonData = readFileSync(data_path);
         const data = JSON.parse(jsonData);
-        if (Object.keys(data.guilds).includes(guildId)) {
-            data.guilds[guildId].channelId = channelId
-            data.guilds[guildId].displayAllAchievements = displayAllAchievements
+        if (!data.guilds[guildData.id]) {
+            data.guilds[guildData.id] = {};
         }
-        else {
-            data.guilds[guildId] = {
-                "channelId": channelId,
-                "displayAllAchievements": displayAllAchievements
-            }
-        }
-        writeFileSync(data_path, JSON.stringify(data));
-    }
-    catch (error) {
-        console.error("setGuildChannelAndDisplaySettingsDB error:", error.message);
+
+        // Merge all relevant properties from guildData
+        data.guilds[guildData.id].channelId = guildData.channel_id;
+        data.guilds[guildData.id].displayAllAchievements = guildData.display_all_achievements;
+        data.guilds[guildData.id].report_enabled = guildData.report_enabled;
+        data.guilds[guildData.id].report_interval = guildData.report_interval;
+        data.guilds[guildData.id].next_report_timestamp = guildData.next_report_timestamp;
+
+        writeFileSync(data_path, JSON.stringify(data, null, 2));
+    } catch (error) {
+        console.error("saveGuildDataDB error:", error.message);
     }
 }
 
-export { addGameDB, addUserDB, removeGameDB, removePlayerDB, changeColorDB, setGuildChannelAndDisplaySettingsDB, getInfosDB, getGamesDB };
+export { addGameDB, addUserDB, removeGameDB, removePlayerDB, changeColorDB, getInfosDB, getGamesDB, saveGuildDataDB };

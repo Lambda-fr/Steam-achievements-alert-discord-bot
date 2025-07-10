@@ -646,7 +646,7 @@ async function displayLeaderboard(interaction, leaderboardData) {
     });
 }
 
-async function displayAchievementActivityReport(interaction, period) {
+async function displayAchievementActivityReport(client, guildId, period) {
     try {
         Canvas.registerFont(path.join(ASSETS_PATH, 'OpenSans-VariableFont_wdth,wght.ttf'), { family: 'Open Sans Regular' });
 
@@ -667,12 +667,11 @@ async function displayAchievementActivityReport(interaction, period) {
                 startDate = endDate - (365 * 24 * 60 * 60);
                 break;
             default:
-                await interaction.editReply('Invalid period specified. Use last_24h, last_week, last_month, or last_year.');
-                return;
+                return { message: 'Invalid period specified. Use last_24h, last_week, last_month, or last_year.' };
         }
 
-        const usersData = interaction.client.data.users.filter(user => user.guilds.includes(interaction.guildId));
-        const allGames = interaction.client.data.games; // Map type
+        const usersData = client.data.users.filter(user => user.guilds.includes(guildId));
+        const allGames = client.data.games; // Map type
         const playerActivity = {}; // { steam_id: { user: {}, games: { game_id: { game: {}, achievements: [] } } } }
         for (const user of usersData) {
             playerActivity[user.steam_id] = {
@@ -713,8 +712,7 @@ async function displayAchievementActivityReport(interaction, period) {
         activePlayers.sort((a, b) => b.nbAchievements - a.nbAchievements);
 
         if (activePlayers.length === 0) {
-            await interaction.editReply(`No achievement activity found for the last ${period.replace('last_', '').replace('_', ' ')}.`);
-            return;
+            return { message: `No achievement activity found for the last ${period.replace('last_', '').replace('_', ' ')}.` };
         }
 
         // --- Canvas Drawing Logic ---
@@ -809,11 +807,11 @@ async function displayAchievementActivityReport(interaction, period) {
         }
 
         const attachment = new AttachmentBuilder(canvas.toBuffer(), 'achievement_activity_report.png');
-        await interaction.editReply({ files: [attachment] });
+        return { attachment: attachment };
 
     } catch (err) {
         console.error('Error generating achievement activity report:', err);
-        await interaction.editReply('An error occurred while generating the report.');
+        return { message: 'An error occurred while generating the report.' };
     }
 }
 

@@ -18,5 +18,11 @@ export const data = new SlashCommandBuilder()
 export async function execute(interaction) {
     await interaction.deferReply();
     const period = interaction.options.getString('period');
-    await displayAchievementActivityReport(interaction, period);
+    const report = await displayAchievementActivityReport(interaction.client, interaction.guildId, period);
+
+    if (report.attachment) {
+        await interaction.editReply({ files: [report.attachment] });
+    } else {
+        await interaction.editReply({ content: report.message });
+    }
 }

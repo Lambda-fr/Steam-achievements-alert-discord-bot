@@ -9,6 +9,7 @@ import config from './config.json' with { type: 'json' };
 import { getInfosDB, getGamesDB } from './src/connectAndQueryJSON.js';
 import { loadAvatars } from './src/steam/api.js';
 import { listenForNewAchievements } from './src/steam/achievement_listener.js';
+import { startReportScheduler } from './src/discord/report_listener.js';
 import Guild from './src/models/Guild.js';
 
 // Add a timestamp to console logs
@@ -83,6 +84,7 @@ client.once(Events.ClientReady, async c => {
 		console.table(client.data.guilds);
 
 		listenForNewAchievements(client.data);
+		startReportScheduler(client);
 
 	} catch (err) {
 		console.error("Fatal error during bot initialization:", err);

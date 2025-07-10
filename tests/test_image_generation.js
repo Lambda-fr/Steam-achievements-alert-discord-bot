@@ -5,7 +5,7 @@ import { loadImage } from "canvas";
 // Mock data for testing
 const mockAchievement = {
     achievementName: 'Master of the Elements',
-    achievementDescription: 'Successfusslly combine all elemental powers to defeat the final boss and restore balance to the world.',
+    achievementDescription: 'Successfusslly combine all ',
     icon: 'https://cdn.discordapp.com/embed/avatars/0.png',
     globalPercentage: 5,
     playersUnlockTime: {
