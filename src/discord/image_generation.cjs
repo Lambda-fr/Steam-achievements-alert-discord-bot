@@ -1,4 +1,5 @@
 const { AttachmentBuilder, EmbedBuilder, ActionRowBuilder } = require('discord.js');
+
 const { ASSETS_PATH } = require('../utils/paths').default;
 const path = require('path');
 const { backButton, forwardButton } = require(path.join(ASSETS_PATH, 'buttons.js'));
@@ -436,37 +437,47 @@ async function displayAchievementsList(achievements_locked, interaction, canvas_
     })
 }
 
+function drawRoundedRect(context, x, y, width, height, radius) {
+    context.beginPath();
+    context.moveTo(x + radius, y);
+    context.lineTo(x + width - radius, y);
+    context.quadraticCurveTo(x + width, y, x + width, y + radius);
+    context.lineTo(x + width, y + height - radius);
+    context.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+    context.lineTo(x + radius, y + height);
+    context.quadraticCurveTo(x, y + height, x, y + height - radius);
+    context.lineTo(x, y + radius);
+    context.quadraticCurveTo(x, y, x + radius, y);
+    context.closePath();
+}
+
 async function displayLeaderboard(interaction, leaderboardData) {
-    const MAX_PLAYERS_PER_PAGE = 5;
+    const MAX_PLAYERS_PER_PAGE = 8;
     const background = await Canvas.loadImage(path.join(ASSETS_PATH, 'background.jpg'));
     async function get_leaderboard_image(players_fraction, startRank) {
         Canvas.registerFont(path.join(ASSETS_PATH, 'OpenSans-VariableFont_wdth,wght.ttf'), { family: 'Open Sans Regular' });
 
-        const avatarHeight = 50;
-        const avatarYPadding = 25;
-        const iconSize = 20;
-        const iconXOffset = 30; // Space between icons
-        const gamesPerLine = 16; // Max icons per line
-        const lineSpacing = 10; // Vertical space between lines of icons
-        const playerEntryPadding = 20; // Padding between the bottom of one player's content and the next player's avatar
+        const cardWidth = 650;
+        const cardHeight = 150;
+        const cardMargin = 20;
+        const avatarSize = 80;
+        const iconSize = 30;
+        const iconXOffset = 35; // Space between icons
+        const gamesPerLine = 15; // Max icons per line
+        const lineSpacing = 5; // Vertical space between lines of icons
 
-        let calculatedTotalHeight = 48; // For title and initial padding
-        let usersYPositions = []; // Y position for the top of the current player's avatar
-        usersYPositions.push(calculatedTotalHeight); // Start with the first player's position
+        let calculatedTotalHeight = 70; // For title and initial padding
+
         for (let i = 0; i < players_fraction.length; i++) {
             const entry = players_fraction[i];
-            if (i !== 0) {
-                usersYPositions.push(calculatedTotalHeight);
-            }
             const numberOfCompletedGames = entry.completedGames.length;
+            let currentCardHeight = cardHeight;
+
             if (numberOfCompletedGames > gamesPerLine) {
                 const numLinesOfGames = Math.ceil(numberOfCompletedGames / gamesPerLine);
-                calculatedTotalHeight += avatarYPadding + (numLinesOfGames * (iconSize + lineSpacing));
+                currentCardHeight += (numLinesOfGames - 1) * (iconSize + lineSpacing);
             }
-            else {
-                calculatedTotalHeight += avatarHeight;
-            }
-            calculatedTotalHeight += playerEntryPadding;
+            calculatedTotalHeight += currentCardHeight + cardMargin;
         }
 
         const canvas = Canvas.createCanvas(700, calculatedTotalHeight);
@@ -474,54 +485,106 @@ async function displayLeaderboard(interaction, leaderboardData) {
 
         context.drawImage(background, 0, 0, canvas.width, canvas.height);
 
-        context.font = '25px "Open Sans Regular"';
+        context.font = '30px "Open Sans Regular"';
         context.fillStyle = '#ffffff';
-        context.fillText('Leaderboard - Games Completed', 25, 35);
+        context.fillText('Leaderboard - Games Completed', 25, 45);
+
+        let currentY = 70;
 
         for (let i = 0; i < players_fraction.length; i++) {
-            let currentYPosition = usersYPositions[i];
             const entry = players_fraction[i];
             const user = entry.user;
             const numberOfCompletedGames = entry.completedGames.length;
+            const totalAchievements = entry.totalUnlockedAchievements; // Assuming this data is available
 
-            // Rank
-            context.font = '15px "Open Sans Regular"';
-            context.fillStyle = '#ffffff';
-            context.fillText(`#${startRank + i}`, 25, currentYPosition + (avatarHeight / 2)); // Centered vertically with avatar
+            let cardColor = '#36393f'; // Default card color
+            if (startRank + i === 1) {
+                cardColor = '#FFD700'; // Gold for rank 1
+            } else if (startRank + i === 2) {
+                cardColor = '#C0C0C0'; // Silver for rank 2
+            } else if (startRank + i === 3) {
+                cardColor = '#CD7F32'; // Bronze for rank 3
+            }
+
+            let currentCardHeight = cardHeight;
+            if (numberOfCompletedGames > gamesPerLine) {
+                const numLinesOfGames = Math.ceil(numberOfCompletedGames / gamesPerLine);
+                currentCardHeight += (numLinesOfGames - 1) * (iconSize + lineSpacing);
+            }
+
+            // Draw card background
+            context.fillStyle = cardColor;
+            drawRoundedRect(context, 25, currentY, cardWidth, currentCardHeight, 15);
+            context.fill();
+
+            // Draw inner background for content
+            context.fillStyle = '#2f3136';
+            drawRoundedRect(context, 30, currentY + 5, cardWidth - 10, currentCardHeight - 10, 10);
+            context.fill();
+
+            // Rank / Medal
+            const rank = startRank + i;
+            const circleRadius = 16;
+            const circleX = 75; // Adjusted X position
+            const circleY = currentY + 28; // Adjusted Y position
+
+            context.beginPath();
+            context.arc(circleX, circleY, circleRadius, 0, Math.PI * 2, true);
+
+            if (rank === 1) {
+                context.fillStyle = '#FFD700'; // Gold
+            } else if (rank === 2) {
+                context.fillStyle = '#C0C0C0'; // Silver
+            } else if (rank === 3) {
+                context.fillStyle = '#CD7F32'; // Bronze
+            } else {
+                context.fillStyle = '#36393f'; // Default background color for others
+            }
+            context.fill();
+
+            // Make the rank number bold
+            context.font = 'bold 22px "Open Sans Regular"';
+            context.fillStyle = '#ffffff'; // White text for rank number
+            context.textAlign = 'center';
+            context.textBaseline = 'middle';
+            context.fillText(`${rank}`, circleX, circleY);
+            context.textBaseline = 'alphabetic'; // Reset to default
 
             // Avatar
-            context.drawImage(user.avatar, 60, currentYPosition, avatarHeight, avatarHeight);
+            context.drawImage(user.avatar, 35, currentY + 50, avatarSize, avatarSize);
 
             // Nickname
-            context.font = '20px "Open Sans Regular"';
+            context.font = '25px "Open Sans Regular"';
             context.fillStyle = '#ffffff';
-            context.fillText(user.nickname, 130, currentYPosition + 16); // Centered vertically with avatar
+            context.textAlign = 'left';
+            context.fillText(user.nickname, 130, currentY + 45);
+
+            // Total Achievements
+            context.font = '18px "Open Sans Regular"';
+            context.fillStyle = '#bfbfbf';
+            context.fillText(`Total achievements unlocked : ${totalAchievements}`, 130, currentY + 70);
 
             // Completed Games Count
-            context.font = '15px "Open Sans Regular"';
-            context.fillStyle = '#ffffff';
+            context.font = '18px "Open Sans Regular"';
+            context.fillStyle = '#bfbfbf';
             context.textAlign = 'right';
-            context.fillText(`${numberOfCompletedGames} games`, canvas.width - 25, currentYPosition + 16);
+            context.fillText(`Games Completed: ${numberOfCompletedGames}`, cardWidth + 15, currentY + 45);
             context.textAlign = 'left';
 
             // Games completed icons
             let iconCurrentX = 130;
-            let iconCurrentY = currentYPosition + avatarYPadding; // Start below avatar block 
+            let iconCurrentY = currentY + 90;
 
-            // Add a cache for loaded images to avoid redundant loads
             const imageCache = {};
 
             for (let j = 0; j < entry.completedGames.length; j++) {
                 const game = entry.completedGames[j];
                 if (j > 0 && j % gamesPerLine === 0) {
-                    // New line of icons
                     iconCurrentX = 130;
                     iconCurrentY += iconSize + lineSpacing;
                 }
 
                 try {
-                    // Log the URL being loaded
-                    // Load image from URL if not already loaded
                     if (game.img) {
                         let imgObj;
                         if (imageCache[game.img]) {
@@ -532,14 +595,12 @@ async function displayLeaderboard(interaction, leaderboardData) {
                         }
                         context.drawImage(imgObj, iconCurrentX, iconCurrentY, iconSize, iconSize);
                     }
-
-
                 } catch (err) {
                     console.warn(`Error loading game icon for user ${user.nickname}, game ${game.name}, url ${game.img}:`, err);
-                    // Optionally, draw a placeholder or skip
                 }
                 iconCurrentX += iconXOffset;
             }
+            currentY += currentCardHeight + cardMargin;
         }
 
         return new AttachmentBuilder(canvas.toBuffer(), 'leaderboard.png');
