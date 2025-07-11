@@ -1,5 +1,6 @@
 import { SlashCommandBuilder } from 'discord.js';
 import { saveGuildDataDB } from '../../connectAndQueryJSON.js';
+import { checkAndSendReports } from '../../discord/report_listener.js';
 
 export const data = new SlashCommandBuilder()
     .setName('set-achievements-report-schedule')
@@ -20,7 +21,7 @@ export const data = new SlashCommandBuilder()
             .setRequired(false));
 
 export async function execute(interaction) {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply();
 
     const interval = interaction.options.getString('interval');
     const firstReportTimestamp = interaction.options.getInteger('first-report-timestamp');
@@ -52,5 +53,7 @@ export async function execute(interaction) {
         channel_id: guildData.channel_id
     });
     // Save the updated guild data to the database
+    checkAndSendReports(interaction.client); // Check and send reports immediately after setting the schedule
     await saveGuildDataDB(guildData);
+
 }

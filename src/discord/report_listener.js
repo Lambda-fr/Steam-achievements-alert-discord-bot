@@ -85,3 +85,5 @@ export function startReportScheduler(client) {
     // Initial check on startup after a short delay
     setTimeout(() => checkAndSendReports(client), 10 * 1000);
 }
+
+export { checkAndSendReports }; // Export for testing purposes
