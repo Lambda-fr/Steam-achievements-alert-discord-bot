@@ -26,9 +26,9 @@ async function checkAndSendReports(client) {
                     const report = await displayAchievementActivityReport(client, guild.id, period);
 
                     if (report.attachment) {
-                        await channel.send({ files: [report.attachment] });
+                        await channel.send({ content: `[AUTOMATIC REPORT] ${report.message}`, files: [report.attachment] });
                     } else {
-                        await channel.send({ content: report.message });
+                        await channel.send({ content: `[AUTOMATIC REPORT] ${report.message}` });
                     }
 
                     // Calculate next report time, catching up if needed

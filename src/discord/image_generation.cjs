@@ -748,7 +748,8 @@ async function displayAchievementActivityReport(client, guildId, period) {
 
         context.font = '30px "Open Sans Regular"';
         context.fillStyle = '#ffffff';
-        context.fillText(`Achievement Activity - Last ${period.replace('last_', '').replace('_', ' ')}`, 25, 45);
+        const title = `Achievement Activity - Last ${period.replace('last_', '').replace('_', ' ')}`;
+        context.fillText(title, 25, 45);
 
         let currentY = 70;
 
@@ -807,7 +808,7 @@ async function displayAchievementActivityReport(client, guildId, period) {
         }
 
         const attachment = new AttachmentBuilder(canvas.toBuffer(), 'achievement_activity_report.png');
-        return { attachment: attachment };
+        return { message: title, attachment: attachment };
 
     } catch (err) {
         console.error('Error generating achievement activity report:', err);

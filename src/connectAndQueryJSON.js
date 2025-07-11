@@ -22,11 +22,7 @@ async function getInfosDB(guilds, client) {
         Object.entries(data.users).forEach(([DiscordID, user]) => {
             users.push(new User(user.SteamID, DiscordID, user.DiscordNickname, user.Guilds, user.Color))
         })
-        /*Object.entries(data.games).forEach(([AppID, game]) => {
-            games.push(new Game(game.Name, AppID, game.Guilds, game.Aliases || []))
-        })*/
         guilds.forEach((guild) => {
-            // Not clean: mutates input objects, should return new objects instead
             if (Object.keys(data.guilds).includes(guild.id)) {
                 guild.channel_id = data.guilds[guild.id].channelId
                 guild.display_all_achievements = data.guilds[guild.id].displayAllAchievements || false;

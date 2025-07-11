@@ -21,8 +21,8 @@ export async function execute(interaction) {
     const report = await displayAchievementActivityReport(interaction.client, interaction.guildId, period);
 
     if (report.attachment) {
-        await interaction.editReply({ files: [report.attachment] });
+        await interaction.editReply({ content: `[REPORT] ${report.message}`, files: [report.attachment] });
     } else {
-        await interaction.editReply({ content: report.message });
+        await interaction.editReply({ content: `[REPORT] ${report.message}` });
     }
 }
