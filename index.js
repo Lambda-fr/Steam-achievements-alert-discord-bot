@@ -70,8 +70,6 @@ client.once(Events.ClientReady, async c => {
 		// 2. Récupération des jeux de la BDD
 		await getGamesDB(client);
 
-		console.table(Array.from(client.data.games.values()), ['id', 'realName', 'name', 'aliases', 'playtime']);
-
 		// 3. Enrichir les jeux avec les données des owned games des utilisateurs
 		for (const user of client.data.users) {
 			await user.updateOwnedGamesData(client.data);

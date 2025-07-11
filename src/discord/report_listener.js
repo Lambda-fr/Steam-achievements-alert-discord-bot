@@ -9,7 +9,7 @@ async function checkAndSendReports(client) {
 
     for (const guild of guilds) {
         console.log(`\tChecking guild ${guild.id} for report requirements...`);
-        console.log(`\t\tReport enabled: ${guild.report_enabled}, Interval: ${guild.report_interval}, Next report timestamp: ${guild.next_report_timestamp}`);
+        console.log(`\t\tReport enabled: ${guild.report_enabled}, Interval: ${guild.report_interval}, Next report timestamp: ${new Date(guild.next_report_timestamp * 1000).toISOString()}`);
         if (!guild.report_enabled || !guild.report_interval || !guild.channel_id) {
             continue;
         }
@@ -38,6 +38,8 @@ async function checkAndSendReports(client) {
                         newNextReportTime += intervalSeconds;
                     }
                     guild.next_report_timestamp = newNextReportTime;
+
+                    console.log(`Next report for guild ${guild.id} scheduled at ${new Date(newNextReportTime * 1000).toISOString()}`);
 
                     // Persist the new timestamp
                     await saveGuildDataDB(guild);
