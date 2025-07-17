@@ -118,14 +118,14 @@ async function displayNewAchievementImage(achievement, game, users, guild, unloc
         const socialY = socialSectionBaseY;
         context.font = '22px "Open Sans Regular"';
         context.fillStyle = '#ffffff';
-        context.fillText("Rarity:", 25, socialY);
+        context.fillText("Worldwide Rarity :", 25, socialY);
         context.fillStyle = isRare ? '#FFD700' : '#67d4f4';
         context.fillText(`${(achievement.globalPercentage ?? 0)}% of global players`, 25, socialY + 25);
 
         context.font = '22px "Open Sans Regular"';
         context.fillStyle = '#ffffff';
         const unlockedByX = 280;
-        context.fillText("Already unlocked by:", unlockedByX, socialY);
+        context.fillText("Unlocked By Members :", unlockedByX, socialY);
 
         const avatarSize = 32;
         const avatarSpacing = 40;
