@@ -727,35 +727,23 @@ async function displayAchievementActivityReport(client, guildId, period) {
         const achievementsPerLine = 15; // Max icons per line
         const gameIconSize = 40; // Size for game icons
 
-        let simulatedHeight = 70; // Initial Y for the title
-
-        for (let i = 0; i < activePlayers.length; i++) {
-            const player = activePlayers[i];
-            simulatedHeight += 60; // Player header (50px for avatar/text + 10px for spacing)
-
+        for (const player of activePlayers) {
+            totalHeight += 50; // Player name and avatar line
             const sortedGames = Object.values(player.games).sort((a, b) => b.achievements.length - a.achievements.length);
-            for (let k = 0; k < sortedGames.length; k++) {
-                const gameEntry = sortedGames[k];
+            for (const gameEntry of sortedGames) {
                 const numAchievements = gameEntry.achievements.length;
-
-                simulatedHeight += gameIconSize + 5; // Game icon and text
-
+                totalHeight += gameIconSize + 5; // Space for game icon and text, plus a small padding
                 if (numAchievements > 0) {
                     const numLines = Math.ceil(numAchievements / achievementsPerLine);
-                    simulatedHeight += numLines * (achievementIconSize + achievementIconSpacing);
+                    totalHeight += numLines * (achievementIconSize + achievementIconSpacing);
                 }
-
-                // Add gameSectionPadding only if it's not the last game for this player
-                if (k < sortedGames.length - 1) {
-                    simulatedHeight += gameSectionPadding;
-                }
+                totalHeight += gameSectionPadding;
             }
-            // Add playerSectionPadding only if it's not the last player
-            if (i < activePlayers.length - 1) {
-                simulatedHeight += playerSectionPadding;
+            // don't add padding for the last player section
+            if (player !== activePlayers[activePlayers.length - 1]) {
+                totalHeight += playerSectionPadding;
             }
         }
-        totalHeight = simulatedHeight;
 
         const canvas = Canvas.createCanvas(700, totalHeight);
         const context = canvas.getContext('2d');
