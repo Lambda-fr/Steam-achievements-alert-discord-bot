@@ -52,7 +52,7 @@ Displays a leaderboard of players based on the number of games completed. Also d
 
 ### 6. Configuration and Management Commands
 
-*   `/add_player`: Adds a player to track. You need to provide the Steam ID for each player you want to track.
+*   `/add_player`: Adds a player to track. You need to provide the Steam ID for each player you want to track. For the bot to function correctly, players must set their basic and game details to "Public" on Steam at [https://steamcommunity.com/id/superlambda/edit/settings](https://steamcommunity.com/id/superlambda/edit/settings). Additionally, ensure the "Always keep my total playtime private even if users can see my game details" option is unchecked.
 *   `/remove_player`: Removes a tracked player.
 *   `/add_game`: Registers a game. Needed to list achievements, display progress, and history of a specific game. 
 *   `/remove_game`: Removes a registered game.
