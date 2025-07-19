@@ -7,7 +7,7 @@ This Discord bot displays unlocked Steam achievements in real-time and offers va
 ### 1. New Steam Achievement Unlocked Alerts
 
 The bot sends messages (text and image) to a specified channel when a new achievement is detected for one of the registered players. Updates occur every 60 seconds.
-This feature can either display achievements only for tracked games (those registered with /add-game) or for *all* games, as it is set with `/set_new_achievements_display`. 
+This feature can either display achievements only for tracked games (those registered with `/add-game`) or for *all* games, as configured with `/set_new_achievements_display`. 
 
 It also indicates which other players have already unlocked this achievement and the global unlock percentage. The player's current progress for the game is also displayed.
 
@@ -35,34 +35,34 @@ Displays the history of the number of unlocked achievements for a specified game
 <img width="698" height="493" alt="image" src="https://github.com/user-attachments/assets/3cecea61-2112-4038-a736-9bcc040b9acd" />
 
 
-### 7. Achievement Leaderboard (`/leaderboard`)
+### 4. Achievement Leaderboard (`/leaderboard`)
 
 Displays a leaderboard of players based on the number of games completed. Also displays the total number of achievements unlocked in any games.
 
 <img width="465" height="498" alt="image" src="https://github.com/user-attachments/assets/a813b6ac-543d-4c05-9b8c-ef3119e0a9cb" />
 
 
-### 8. Achievement Report (`/achievement_report` and `/set-achievements-report-schedule`)
+### 5. Achievement Report (`/achievement_report` and `/set-achievements-report-schedule`)
 
-Generates a report of unlocked achievements.
-An automatic report can also be set with **`/set-achievements-report-schedule`**. It will be sent periodically according to the chosen interval.
+*   **`/achievement_report`**: Generates a report of unlocked achievements for a specified period (last 24 hours, last week, last month, or last year).
+*   **`/set-achievements-report-schedule`**: Configures an automatic report to be sent periodically (daily, weekly, or monthly) to a designated channel. You can also specify a timestamp for the first report or disable the automatic reports.
 
 <img width="373" height="688" alt="image" src="https://github.com/user-attachments/assets/2a7bde19-4537-4cab-95d2-70bf1c41af59" />
 
 
-### 9. Configuration and Management Commands
+### 6. Configuration and Management Commands
 
-*   `/add_player`: Adds a player to track. You need to provide the steam ID for each player you want to track.
+*   `/add_player`: Adds a player to track. You need to provide the Steam ID for each player you want to track.
 *   `/remove_player`: Removes a tracked player.
-*   `/add_game`: Registers a game. Needed to list achievements, display progress and history of a specific game. 
+*   `/add_game`: Registers a game. Needed to list achievements, display progress, and history of a specific game. 
 *   `/remove_game`: Removes a registered game.
 *   `/list_players`: Lists all tracked players.
 *   `/list_games`: Lists all registered games.
 *   `/change_user_color`: Changes the color associated with a user in the history.
-*   `/set_new_achievements_display`: Configures the channel where new achievement alerts should be sent, indicates if all games should be tracked.
+*   `/set_new_achievements_display`: Configures the channel where new achievement alerts should be sent, and indicates if all games should be tracked.
 *   `/set_achievement_report_schedule`: Configures the frequency and channel for achievement reports.
-*   `/ping`: Checks the bot liveness.
-*   `/refresh_owned_games`: Updates the list of games owned by players. Do this when owned games of a specific player were not fetched correclty (it can be seen when total playtime is missing or games are missing in leaderboard especially) 
+*   `/ping`: Checks the bot's liveness.
+*   `/refresh_owned_games`: Updates the list of games owned by players. Use this when owned games of a specific player were not fetched correctly (e.g., total playtime is missing or games are missing in the leaderboard).
 
 ## Required Configuration
 
