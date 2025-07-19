@@ -1,5 +1,5 @@
 import { REST, Routes } from 'discord.js';
-import { accessSync, constants, writeFileSync, readdirSync, existsSync } from 'node:fs';
+import { accessSync, constants, writeFileSync, readdirSync, existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'url';
 
@@ -53,14 +53,20 @@ if (!checkIfFileExists(filePath)) {
 	console.log(`${filePath} already existing`);
 }
 
-import config from './config.json' with { type: 'json' };
+let clientId, guildId, discord_token;
+try {
+	const configContent = readFileSync('./config.json', 'utf8');
+	const config = JSON.parse(configContent);
+	({ clientId, guildId, discord_token } = config);
+} catch (error) {
+	exitWithError('Failed to load config.json. Please ensure it is correctly formatted.', error);
+}
 
-const { clientId, guildId, discord_token } = config;
-if (clientId === "" || discord_token === "") {
+if (clientId === "" || clientId === "YOUR_CLIENT_ID" || discord_token === "" || discord_token === "YOUR_DISCORD_TOKEN") {
 	exitWithError('Please fill ./config.json');
 }
 
-if (!Array.isArray(guildId) || guildId.length === 0) {
+if (!Array.isArray(guildId) || guildId.length === 0 || guildId.some(id => id === "" || id === "YOUR_GUILD_ID_1" || id === "YOUR_GUILD_ID_2")) {
 	exitWithError('Please provide at least one guildId in ./config.json as an array.');
 }
 
