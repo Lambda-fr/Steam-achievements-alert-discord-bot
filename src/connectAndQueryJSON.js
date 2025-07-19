@@ -26,6 +26,7 @@ async function getInfosDB(guilds, client) {
             if (Object.keys(data.guilds).includes(guild.id)) {
                 guild.channel_id = data.guilds[guild.id].channelId
                 guild.display_all_achievements = data.guilds[guild.id].displayAllAchievements || false;
+                guild.display_new_achievements_enabled = data.guilds[guild.id].displayNewAchievementsEnabled || false;
                 guild.report_enabled = data.guilds[guild.id].report_enabled || false;
                 guild.report_interval = data.guilds[guild.id].report_interval || null;
                 guild.next_report_timestamp = data.guilds[guild.id].next_report_timestamp || null;
@@ -205,6 +206,7 @@ async function saveGuildDataDB(guildData) {
         // Merge all relevant properties from guildData
         data.guilds[guildData.id].channelId = guildData.channel_id;
         data.guilds[guildData.id].displayAllAchievements = guildData.display_all_achievements;
+        data.guilds[guildData.id].displayNewAchievementsEnabled = guildData.display_new_achievements_enabled;
         data.guilds[guildData.id].report_enabled = guildData.report_enabled;
         data.guilds[guildData.id].report_interval = guildData.report_interval;
         data.guilds[guildData.id].next_report_timestamp = guildData.next_report_timestamp;

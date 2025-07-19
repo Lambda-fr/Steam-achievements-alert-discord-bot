@@ -39,7 +39,7 @@ async function processAndDisplayNewAchievements(appData) {
     for (const newA of new_achievements) {
       for (const guild_id of newA[0].guilds) {
         const guild = appData.guilds.find(g => g.id === guild_id);
-        if (typeof guild === 'undefined' || typeof guild.channel === 'undefined' || typeof guild.channel_id === 'undefined') {
+        if (typeof guild === 'undefined' || typeof guild.channel === 'undefined' || typeof guild.channel_id === 'undefined' || !guild.display_new_achievements_enabled) {
           continue;
         }
         const game = appData.games.get(newA[1].gameId);
