@@ -729,8 +729,8 @@ async function displayAchievementActivityReport(client, guildId, period) {
 
         for (const player of activePlayers) {
             totalHeight += 50; // Player name and avatar line
-            for (const gameId in player.games) {
-                const gameEntry = player.games[gameId];
+            const sortedGames = Object.values(player.games).sort((a, b) => b.achievements.length - a.achievements.length);
+            for (const gameEntry of sortedGames) {
                 const numAchievements = gameEntry.achievements.length;
                 totalHeight += gameIconSize + 5; // Space for game icon and text, plus a small padding
                 if (numAchievements > 0) {
@@ -761,8 +761,8 @@ async function displayAchievementActivityReport(client, guildId, period) {
             context.fillText(`${player.user.nickname} unlocked ${player.nbAchievements} achievements:`, 90, currentY + 35);
             currentY += 60;
 
-            for (const gameId in player.games) {
-                const gameEntry = player.games[gameId];
+            const sortedGames = Object.values(player.games).sort((a, b) => b.achievements.length - a.achievements.length);
+            for (const gameEntry of sortedGames) {
                 const numAchievements = gameEntry.achievements.length;
 
                 // Game icon and line
