@@ -18,6 +18,10 @@ export const data = new SlashCommandBuilder()
     .addIntegerOption(option =>
         option.setName('first-report-timestamp')
             .setDescription('The timestamp for the first report. If not specified, the current time will be used.')
+            .setRequired(false))
+    .addChannelOption(option =>
+        option.setName('channel')
+            .setDescription('The channel to send the report in. Defaults to the current channel.')
             .setRequired(false));
 
 export async function execute(interaction) {
@@ -25,6 +29,7 @@ export async function execute(interaction) {
 
     const interval = interaction.options.getString('interval');
     const firstReportTimestamp = interaction.options.getInteger('first-report-timestamp');
+    const channel = interaction.options.getChannel('channel');
 
     const guildId = interaction.guildId;
     const guildData = interaction.client.data.guilds.find(g => g.id === guildId);
@@ -39,11 +44,11 @@ export async function execute(interaction) {
         guildData.report_interval = null;
         await interaction.editReply('Automatic achievement reports have been disabled.');
     } else {
-        guildData.channel_id = guildData.channel_id || interaction.channelId; // Ensure channel_id is set, if not already
+        guildData.channel_id = channel ? channel.id : (guildData.channel_id || interaction.channelId);
         guildData.report_enabled = true;
         guildData.report_interval = interval;
-        guildData.next_report_timestamp = firstReportTimestamp || null; // Set next report timestamp to the provided value or null
-        await interaction.editReply(`Automatic achievement reports will now be sent ${interval} starting ${guildData.next_report_timestamp ? new Date(guildData.next_report_timestamp * 1000).toUTCString() : 'immediately'}.`); // Display UTC time in local format
+        guildData.next_report_timestamp = firstReportTimestamp || null;
+        await interaction.editReply(`Automatic achievement reports will now be sent ${interval} to <#${guildData.channel_id}> starting ${guildData.next_report_timestamp ? new Date(guildData.next_report_timestamp * 1000).toUTCString() : 'immediately'}.`);
     }
 
     console.log(`Guild ${guildId} report settings updated:`, {
@@ -52,8 +57,8 @@ export async function execute(interaction) {
         next_report_timestamp: guildData.next_report_timestamp,
         channel_id: guildData.channel_id
     });
-    // Save the updated guild data to the database
-    checkAndSendReports(interaction.client); // Check and send reports immediately after setting the schedule
+
+    checkAndSendReports(interaction.client);
     await saveGuildDataDB(guildData);
 
 }

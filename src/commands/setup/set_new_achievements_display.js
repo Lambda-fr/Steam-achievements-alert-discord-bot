@@ -1,4 +1,3 @@
-
 import { SlashCommandBuilder } from 'discord.js';
 import { saveGuildDataDB } from '../../connectAndQueryJSON.js';
 
@@ -12,6 +11,10 @@ export const data = new SlashCommandBuilder()
     .addBooleanOption(option =>
         option.setName('display_all')
             .setDescription('Display achievements for all games, not just games added to the server list')
+            .setRequired(false))
+    .addChannelOption(option =>
+        option.setName('channel')
+            .setDescription('The channel to display new achievements in. Defaults to the current channel.')
             .setRequired(false));
 
 export async function execute(interaction) {
@@ -19,6 +22,7 @@ export async function execute(interaction) {
 
     const enabled = interaction.options.getBoolean('enabled');
     const displayAll = interaction.options.getBoolean('display_all');
+    const channel = interaction.options.getChannel('channel');
 
     const guildId = interaction.guildId;
     const guildData = interaction.client.data.guilds.find(g => g.id === guildId);
@@ -31,9 +35,9 @@ export async function execute(interaction) {
     guildData.display_all_achievements = displayAll !== null ? displayAll : guildData.display_all_achievements;
 
     if (enabled) {
-        guildData.channel_id = interaction.channelId;
+        guildData.channel_id = channel ? channel.id : interaction.channelId;
         guildData.display_new_achievements_enabled = true;
-        await interaction.editReply('New achievements will be displayed in this channel !\n' + (guildData.display_all_achievements ? 'All achievements will be displayed.' : 'Only achievements from games added to the server list will be displayed.'));
+        await interaction.editReply(`New achievements will be displayed in <#${guildData.channel_id}> !\n` + (guildData.display_all_achievements ? 'All achievements will be displayed.' : 'Only achievements from games added to the server list will be displayed.'));
     }
     else {
         guildData.display_new_achievements_enabled = false;
