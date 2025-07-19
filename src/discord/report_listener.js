@@ -26,7 +26,7 @@ async function checkAndSendReports(client) {
                     const report = await displayAchievementActivityReport(client, guild.id, period);
 
                     if (report.attachment) {
-                        await channel.send({ content: `[AUTOMATIC REPORT] ${report.message}`, files: [report.attachment] });
+                        await channel.send({ content: `[AUTOMATIC REPORT] ${report.message} (clearer if you download the image)`, files: [report.attachment] });
                     } else {
                         await channel.send({ content: `[AUTOMATIC REPORT] ${report.message}` });
                     }
