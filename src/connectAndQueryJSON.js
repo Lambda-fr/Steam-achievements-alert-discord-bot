@@ -24,7 +24,8 @@ async function getInfosDB(guilds, client) {
         })
         guilds.forEach((guild) => {
             if (Object.keys(data.guilds).includes(guild.id)) {
-                guild.channel_id = data.guilds[guild.id].channelId
+                guild.achievements_channel_id = data.guilds[guild.id].achievements_channel_id
+                guild.report_channel_id = data.guilds[guild.id].report_channel_id
                 guild.display_all_achievements = data.guilds[guild.id].displayAllAchievements || false;
                 guild.display_new_achievements_enabled = data.guilds[guild.id].displayNewAchievementsEnabled || false;
                 guild.report_enabled = data.guilds[guild.id].report_enabled || false;
@@ -32,7 +33,8 @@ async function getInfosDB(guilds, client) {
                 guild.next_report_timestamp = data.guilds[guild.id].next_report_timestamp || null;
             }
             try {
-                guild.channel = client.guilds.cache.get(guild.id)?.channels.cache.find(c => c.id === guild.channel_id)
+                guild.achievements_channel = client.guilds.cache.get(guild.id)?.channels.cache.find(c => c.id === guild.achievements_channel_id)
+                guild.report_channel = client.guilds.cache.get(guild.id)?.channels.cache.find(c => c.id === guild.report_channel_id)
             } catch (err) {
                 console.error(`Error finding channel for guild ${guild.id}:`, err.message);
                 guild.channel = null;
@@ -204,7 +206,8 @@ async function saveGuildDataDB(guildData) {
         }
 
         // Merge all relevant properties from guildData
-        data.guilds[guildData.id].channelId = guildData.channel_id;
+        data.guilds[guildData.id].achievements_channel_id = guildData.achievements_channel_id;
+        data.guilds[guildData.id].report_channel_id = guildData.report_channel_id;
         data.guilds[guildData.id].displayAllAchievements = guildData.display_all_achievements;
         data.guilds[guildData.id].displayNewAchievementsEnabled = guildData.display_new_achievements_enabled;
         data.guilds[guildData.id].report_enabled = guildData.report_enabled;

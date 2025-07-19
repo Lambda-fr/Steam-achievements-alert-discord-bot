@@ -10,7 +10,7 @@ async function checkAndSendReports(client) {
     for (const guild of guilds) {
         console.log(`\tChecking guild ${guild.id} for report requirements...`);
         console.log(`\t\tReport enabled: ${guild.report_enabled}, Interval: ${guild.report_interval}, Next report timestamp: ${new Date(guild.next_report_timestamp * 1000).toISOString()}`);
-        if (!guild.report_enabled || !guild.report_interval || !guild.channel_id) {
+        if (!guild.report_enabled || !guild.report_interval || !guild.report_channel_id) {
             continue;
         }
 
@@ -21,7 +21,7 @@ async function checkAndSendReports(client) {
             const period = getPeriodFromInterval(guild.report_interval);
             if (period) {
                 console.log(`Sending ${guild.report_interval} report for guild ${guild.id}`);
-                const channel = await client.channels.fetch(guild.channel_id);
+                const channel = await client.channels.fetch(guild.report_channel_id);
                 try {
                     const report = await displayAchievementActivityReport(client, guild.id, period);
 

@@ -155,9 +155,9 @@ async function displayNewAchievementImage(achievement, game, users, guild, unloc
         let messageContent = `${game_finished ? '🎉' : ''} <@${unlockingUser.discord_id}> unlocked an achievement on ${game.realName}. Progress : (${unlock_order}/${game.nbTotal}) [${unlock_rate.toFixed(2)}%] ${game_finished ? '🎉' : ''}`;
 
 
-        await guild.channel.send({ content: messageContent, files: [attachment] });
+        await guild.achievements_channel.send({ content: messageContent, files: [attachment] });
         if (game_finished) {
-            guild.channel.send(gifs[Math.floor(Math.random() * gifs.length)]);
+            guild.achievements_channel.send(gifs[Math.floor(Math.random() * gifs.length)]);
         }
     }
     catch (err) {

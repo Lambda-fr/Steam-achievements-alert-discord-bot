@@ -44,18 +44,18 @@ export async function execute(interaction) {
         guildData.report_interval = null;
         await interaction.editReply('Automatic achievement reports have been disabled.');
     } else {
-        guildData.channel_id = channel ? channel.id : (guildData.channel_id || interaction.channelId);
+        guildData.report_channel_id = channel ? channel.id : (guildData.report_channel_id || interaction.channelId);
         guildData.report_enabled = true;
         guildData.report_interval = interval;
         guildData.next_report_timestamp = firstReportTimestamp || null;
-        await interaction.editReply(`Automatic achievement reports will now be sent ${interval} to <#${guildData.channel_id}> starting ${guildData.next_report_timestamp ? new Date(guildData.next_report_timestamp * 1000).toUTCString() : 'immediately'}.`);
+        await interaction.editReply(`Automatic achievement reports will now be sent ${interval} to <#${guildData.report_channel_id}> starting ${guildData.next_report_timestamp ? new Date(guildData.next_report_timestamp * 1000).toUTCString() : 'immediately'}.`);
     }
 
     console.log(`Guild ${guildId} report settings updated:`, {
         report_enabled: guildData.report_enabled,
         report_interval: guildData.report_interval,
         next_report_timestamp: guildData.next_report_timestamp,
-        channel_id: guildData.channel_id
+        report_channel_id: guildData.report_channel_id
     });
 
     checkAndSendReports(interaction.client);

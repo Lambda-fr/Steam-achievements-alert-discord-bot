@@ -35,9 +35,9 @@ export async function execute(interaction) {
     guildData.display_all_achievements = displayAll !== null ? displayAll : guildData.display_all_achievements;
 
     if (enabled) {
-        guildData.channel_id = channel ? channel.id : interaction.channelId;
+        guildData.achievements_channel_id = channel ? channel.id : interaction.channelId;
         guildData.display_new_achievements_enabled = true;
-        await interaction.editReply(`New achievements will be displayed in <#${guildData.channel_id}> !\n` + (guildData.display_all_achievements ? 'All achievements will be displayed.' : 'Only achievements from games added to the server list will be displayed.'));
+        await interaction.editReply(`New achievements will be displayed in <#${guildData.achievements_channel_id}> !\n` + (guildData.display_all_achievements ? 'All achievements will be displayed.' : 'Only achievements from games added to the server list will be displayed.'));
     }
     else {
         guildData.display_new_achievements_enabled = false;
@@ -47,7 +47,7 @@ export async function execute(interaction) {
     console.log(`Guild ${guildId} new achievements display settings updated:`, {
         new_achievements_enabled: guildData.display_new_achievements_enabled,
         display_all_achievements: guildData.display_all_achievements,
-        channel_id: guildData.channel_id
+        achievements_channel_id: guildData.achievements_channel_id
     });
 
     await saveGuildDataDB(guildData);
