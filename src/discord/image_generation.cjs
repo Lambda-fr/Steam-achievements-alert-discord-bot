@@ -417,8 +417,24 @@ async function displayAchievementsList(achievements_locked, interaction, canvas_
 
     let currentIndex = 0
     collector.on('collect', async interaction => {
-        // Increase/decrease index
-        interaction.customId === backButton.data.custom_id ? (currentIndex = currentIndex - MAX_PAGE) : (currentIndex = currentIndex + MAX_PAGE)
+        if (interaction.customId === backButton.data.custom_id) {
+            if (currentIndex - MAX_PAGE < 0) {
+                console.warn("Attempted to go back beyond the start of the achievements list.");
+                return;
+            }
+            currentIndex = currentIndex - MAX_PAGE;
+        }
+        else if (interaction.customId === forwardButton.data.custom_id) {
+            if (currentIndex + MAX_PAGE >= achievements_locked.length) {
+                console.warn("Attempted to go forward beyond the end of the achievements list.");
+                return;
+            }
+            currentIndex = currentIndex + MAX_PAGE;
+        }
+        else {
+            console.warn(`Unknown interaction customId: ${interaction.customId}`);
+            return;
+        }
         // Respond to interaction by updating message with new embed
         const slice_achievements = achievements_locked.slice(currentIndex, currentIndex + 5)
         const img = await get_embedded_img(slice_achievements, currentIndex + 1, currentIndex + slice_achievements.length)
@@ -629,8 +645,24 @@ async function displayLeaderboard(interaction, leaderboardData) {
 
     let currentIndex = 0;
     collector.on('collect', async interaction => {
-        interaction.customId === backButton.data.custom_id ? (currentIndex = currentIndex - MAX_PLAYERS_PER_PAGE) : (currentIndex = currentIndex + MAX_PLAYERS_PER_PAGE);
-
+        if (interaction.customId === backButton.data.custom_id) {
+            if (currentIndex - MAX_PLAYERS_PER_PAGE < 0) {
+                console.warn("Attempted to go back beyond the start of the leaderboard.");
+                return;
+            }
+            currentIndex = currentIndex - MAX_PLAYERS_PER_PAGE;
+        }
+        else if (interaction.customId === forwardButton.data.custom_id) {
+            if (currentIndex + MAX_PLAYERS_PER_PAGE >= leaderboardData.length) {
+                console.warn("Attempted to go forward beyond the end of the leaderboard.");
+                return;
+            }
+            currentIndex = currentIndex + MAX_PLAYERS_PER_PAGE;
+        }
+        else {
+            console.warn(`Unknown interaction customId: ${interaction.customId}`);
+            return;
+        }
         const slice_players = leaderboardData.slice(currentIndex, currentIndex + MAX_PLAYERS_PER_PAGE);
         const img = await get_leaderboard_image(slice_players, currentIndex + 1);
 
