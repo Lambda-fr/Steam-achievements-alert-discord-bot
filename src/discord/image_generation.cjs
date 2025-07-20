@@ -178,7 +178,10 @@ async function displayAchievementsHistory(interaction, all_timestamps, datasets,
         type: "line",
         data: {
             labels: all_timestamps,
-            datasets: datasets
+            datasets: datasets.map(dataset => ({
+                ...dataset,
+                borderWidth: 3
+            }))
         },
         options: {
             layout: {
