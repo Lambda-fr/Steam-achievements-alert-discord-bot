@@ -45,7 +45,12 @@ async function updateLeaderboard(interaction) {
                 completedGames: completedGames,
                 totalUnlockedAchievements: totalUnlockedAchievements
             };
-        }).sort((a, b) => b.numberOfCompletedGames - a.numberOfCompletedGames);
+        }).sort((a, b) => {
+            if (b.numberOfCompletedGames !== a.numberOfCompletedGames) {
+                return b.numberOfCompletedGames - a.numberOfCompletedGames;
+            }
+            return b.totalUnlockedAchievements - a.totalUnlockedAchievements;
+        });
         await discordImageFunctions.displayLeaderboard(interaction, leaderboardData);
     } catch (error) {
         console.error('Error updating leaderboard:', error);
