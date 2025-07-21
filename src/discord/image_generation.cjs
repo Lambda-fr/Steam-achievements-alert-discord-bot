@@ -189,7 +189,7 @@ async function displayNewAchievementImage(achievement, game, users, guild, unloc
         const unlock_rate = unlock_order / game.nbTotal * 100;
         const game_finished = unlock_order === game.nbTotal;
 
-        let messageContent = `${game_finished ? '🎉' : ''} <@${unlockingUser.discord_id}> unlocked an achievement on ${game.realName}. Progress : (${unlock_order}/${game.nbTotal}) [${unlock_rate.toFixed(2)}%] ${game_finished ? '🎉' : ''}`;
+        let messageContent = `${game_finished ? '🎉' : ''} <@${unlockingUser.discord_id}> unlocked an achievement on **${game.realName}**\n> Progress: **${unlock_order}/${game.nbTotal}** - **[${unlock_rate.toFixed(2)}% completed]** ${game_finished ? '🎉' : ''}`;
 
 
         await guild.achievements_channel.send({ content: messageContent, files: [attachment] });
