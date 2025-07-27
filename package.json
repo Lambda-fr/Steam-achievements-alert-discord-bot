@@ -1,6 +1,6 @@
 {
   "name": "bot_discord",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "description": "This is a discord bot showing Steam achievements when unlocked and has other features to see the achievements not yet unlocked.\r It uses Discord API and Steam API and you'll need keys for both. Refer to https://discord.com/developers/docs/intro to know how to add a bot in a discord server.\r It can work on multiple servers.",
   "main": "index.js",
   "type": "module",
