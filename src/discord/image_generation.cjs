@@ -323,7 +323,7 @@ async function displayProgressionBar(interaction, gameObject) {
 
         let users_nb_unlocked_not_null = Object.entries(gameObject.nbUnlocked).filter(([k, v]) => {
             const user = usersData.find(u => u.steam_id === k);
-            return v !== 0
+            return user && v !== 0;
         });
         Canvas.registerFont(path.join(ASSETS_PATH, 'OpenSans-VariableFont_wdth,wght.ttf'), { family: 'Open Sans Regular' })
         const canvas = Canvas.createCanvas(700, 115 + (users_nb_unlocked_not_null.length - 1) * 70);
