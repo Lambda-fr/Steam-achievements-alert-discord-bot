@@ -126,25 +126,20 @@ class Game {
         return true;
     }
 
-    getCompareAchievements(userAuthor, users_vs) {
-        var validAchievements = Object.entries(this.achievements).map(([a_id, a]) => {
-            if (a.playersUnlockTime[userAuthor.steam_id] === 0) {
-                const playersWhoUnlocked = Object.entries(a.playersUnlockTime).map(([u, unlocked_time]) => {
-                    if (unlocked_time != 0 && users_vs.map(_u => _u.steam_id).includes(u)) {
-                        return users_vs.find(_u => _u.steam_id === u)
-                    }
-                }).filter(notUndefined => notUndefined !== undefined);
+    getCompareAchievements(userAuthor, guildUsers, vsUser) {
+        const vsUserSteamID = vsUser ? vsUser.steam_id : null;
+        return Object.values(this.achievements)
+            .filter(a => a.playersUnlockTime[userAuthor.steam_id] === 0 &&
+                (!vsUserSteamID || a.playersUnlockTime[vsUserSteamID] !== 0))
+            .map(a => {
+                const playersWhoUnlocked = guildUsers.filter(u =>
+                    a.playersUnlockTime[u.steam_id] != 0
+                );
                 if (playersWhoUnlocked.length > 0) {
-                    return { object: a, playersWhoUnlocked: playersWhoUnlocked }
+                    return { object: a, playersWhoUnlocked };
                 }
-            }
-
-        }).filter(notUndefined => notUndefined !== undefined);
-        var vs1;
-        if (users_vs.length === 1) {
-            vs1 = users_vs[0]
-        }
-        return validAchievements
+            })
+            .filter(Boolean); // Filter out any undefined values
     }
 
     getLockedAchievements(userAuthor, guildId, usersData, other_users) {
