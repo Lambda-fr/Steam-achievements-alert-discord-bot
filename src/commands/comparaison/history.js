@@ -1,12 +1,15 @@
 import { SlashCommandBuilder } from 'discord.js';
 import discordImageFunctions from '../../discord/image_generation.cjs'
+import { createGameAutocomplete } from '../../utils/autocomplete_games.js';
+export const autocomplete = createGameAutocomplete();
 
 export const data = new SlashCommandBuilder()
     .setName('history')
     .setDescription('Plot number of achievements history for all players on a specified game')
-    .addStringOption(option => option.setName('game_name')
-        .setDescription('name of the game as you specified it (do /list_games)')
-        .setRequired(true))
+    .addIntegerOption(option => option.setName('game_name')
+        .setDescription('name of the game')
+        .setRequired(true)
+        .setAutocomplete(true))
     .addStringOption(option => option.setName('period')
         .setDescription('The period to display the history for. Defaults to all time.')
         .setRequired(false)
@@ -28,10 +31,9 @@ export const data = new SlashCommandBuilder()
 export async function execute(interaction) {
     try {
         await interaction.deferReply()
-        const game_name = interaction.options.getString('game_name');
+        const game_id = interaction.options.getInteger('game_name');
+        const gameObject = Array.from(interaction.client.data.games.values()).find(game => game.id === game_id);
         const period = interaction.options.getString('period') ?? 'all'; // Default to 'all'
-
-        const gameObject = Array.from(interaction.client.data.games.values()).find(game => game.name === game_name || game.aliases.includes(game_name));
 
         if (typeof gameObject === 'undefined') {
             await interaction.editReply('Game not found!');

@@ -136,7 +136,25 @@ loadCommands().catch(err => {
 });
 
 client.on(Events.InteractionCreate, async interaction => {
-	if (!interaction.isChatInputCommand()) return;
+    // Gestion de l'autocomplétion
+    if (interaction.isAutocomplete()) {
+        const command = interaction.client.commands.get(interaction.commandName);
+        
+        if (!command || !command.autocomplete) {
+            console.error(`No autocomplete handler for command ${interaction.commandName}`);
+            return;
+        }
+        
+        try {
+            await command.autocomplete(interaction);
+        } catch (error) {
+            console.error(`Error handling autocomplete for ${interaction.commandName}:`, error);
+        }
+        return;
+    }
+    
+    // Gestion des commandes (code existant)
+    if (!interaction.isChatInputCommand()) return;
 
 	const command = interaction.client.commands.get(interaction.commandName);
 

@@ -1,23 +1,24 @@
 import { SlashCommandBuilder } from 'discord.js';
 import discordImageFunctions from '../../discord/image_generation.cjs'
+import { createGameAutocomplete } from '../../utils/autocomplete_games.js';
+export const autocomplete = createGameAutocomplete();
 
 export const data = new SlashCommandBuilder()
 	.setName('list_compare_achievements')
 	.setDescription('Lists achievements locked for you that are unlocked for other players')
-	.addStringOption(option => option.setName('game_name')
-		.setDescription('name of the game as you specified it (do /list_games)')
-		.setRequired(true))
+	.addIntegerOption(option => option.setName('game_name')
+		.setDescription('name of the game')
+		.setRequired(true)
+		.setAutocomplete(true))
 	.addUserOption(option => option.setName('player_mention')
 		.setDescription('mention a player if you want to compare only with him')
 		.setRequired(false));
 export async function execute(interaction) {
 	await interaction.deferReply();
 
-	const game_name = interaction.options.getString('game_name');
+	const game_id = interaction.options.getInteger('game_name');
+	const gameObject = Array.from(interaction.client.data.games.values()).find(game => game.id === game_id);
 	const playerMention = interaction.options.getUser('player_mention');
-	const gameObject = Array.from(interaction.client.data.games.values())
-		.find(game => game.name === game_name || game.aliases.includes(game_name));
-
 	if (!gameObject)
 		return interaction.editReply('Game not found!');
 	if (!gameObject.guilds.includes(interaction.guildId))
