@@ -78,7 +78,7 @@ client.once(Events.ClientReady, async c => {
 		// Affichage des tables et démarrage du listener
 		console.table(client.data.users);
 		console.log(`Current number of games in client.data.games: ${client.data.games.size}`);
-		console.table(Array.from(client.data.games.values()), ['id', 'realName', 'name', 'aliases', 'playtime']);
+		console.table(Array.from(client.data.games.values()), ['id', 'realName', 'name', 'playtime']);
 		console.table(client.data.guilds);
 
 		listenForNewAchievements(client.data);
@@ -136,25 +136,25 @@ loadCommands().catch(err => {
 });
 
 client.on(Events.InteractionCreate, async interaction => {
-    // Gestion de l'autocomplétion
-    if (interaction.isAutocomplete()) {
-        const command = interaction.client.commands.get(interaction.commandName);
-        
-        if (!command || !command.autocomplete) {
-            console.error(`No autocomplete handler for command ${interaction.commandName}`);
-            return;
-        }
-        
-        try {
-            await command.autocomplete(interaction);
-        } catch (error) {
-            console.error(`Error handling autocomplete for ${interaction.commandName}:`, error);
-        }
-        return;
-    }
-    
-    // Gestion des commandes (code existant)
-    if (!interaction.isChatInputCommand()) return;
+	// Gestion de l'autocomplétion
+	if (interaction.isAutocomplete()) {
+		const command = interaction.client.commands.get(interaction.commandName);
+
+		if (!command || !command.autocomplete) {
+			console.error(`No autocomplete handler for command ${interaction.commandName}`);
+			return;
+		}
+
+		try {
+			await command.autocomplete(interaction);
+		} catch (error) {
+			console.error(`Error handling autocomplete for ${interaction.commandName}:`, error);
+		}
+		return;
+	}
+
+	// Gestion des commandes (code existant)
+	if (!interaction.isChatInputCommand()) return;
 
 	const command = interaction.client.commands.get(interaction.commandName);
 

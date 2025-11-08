@@ -2,8 +2,8 @@ import { SlashCommandBuilder } from 'discord.js';
 
 function list_games(guildId, games) {
 	let games_alpha = [...games.values()].sort((a, b) => a.realName.localeCompare(b.realName));
-	let data = games_alpha.filter(g => g.guilds.includes(guildId)).map(g => [g.realName, String(g.id), ((([g.name, ...g.aliases]).join(',')).length > 90) ? ((([g.name, ...g.aliases]).join(',')).slice(0, 85)) : (([g.name, ...g.aliases]).join(','))])
-	data = [['Name', 'Steam ID', 'Reference & Aliases'], ['', '', ''], ...data]
+	let data = games_alpha.filter(g => g.guilds.includes(guildId)).map(g => [g.realName, String(g.id), ((g.name).length > 90) ? (g.name.slice(0, 85)) : (g.name)])
+	data = [['Name', 'Steam ID', 'Reference'], ['', '', ''], ...data]
 	let colWidths = data[0].map((_, colIndex) => {
 		return Math.max(...data.map(row => row[colIndex].length));
 	});

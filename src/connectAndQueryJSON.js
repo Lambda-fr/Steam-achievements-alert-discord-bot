@@ -68,7 +68,6 @@ async function getGamesDB(client) {
                 if (game) {
                     game.guilds = gameData.Guilds || [];
                     game.name = gameData.Name || '';
-                    game.aliases = gameData.Aliases || [];
                 }
             } catch (error) {
                 console.warn(`Failed to add/update game ${AppID} from data.json: ${error.message}`);
@@ -90,7 +89,6 @@ async function addGameDB(interaction, gameObject) {
         data.games[gameObject.id] = {
             "Name": gameObject.name,
             "Guilds": gameObject.guilds,
-            "Aliases": gameObject.aliases,
             "RealName": gameObject.realName
         }
         writeFileSync(data_path, JSON.stringify(data, null, 2));

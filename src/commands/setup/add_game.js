@@ -10,19 +10,21 @@ export const data = new SlashCommandBuilder()
 		.setDescription('the steam game id')
 		.setRequired(true))
 	.addStringOption(option => option.setName('name')
-		.setDescription('the name you want to set for this game. You can set aliases (separate by ",")')
-		.setRequired(true));
+		.setDescription('the name you want to set for this game (optional)')
+		.setRequired(false));
 export async function execute(interaction) {
 	const game_id = parseInt(interaction.options.getString('game_id'));
-	const nameOption = interaction.options.getString('name');
-	const [game_name, ...aliases] = nameOption.split(',').map(s => s.trim());
+	const game_name = interaction.options.getString('name');
 	await interaction.deferReply();
 
 	try {
-		const otherGameNameFound = Array.from(interaction.client.data.games.values()).find(game => (game.id !== game_id) && (game.name === game_name || game.aliases.includes(game_name) || aliases.some(alias => game.aliases.includes(alias) || (game.name == alias))));
-		if (otherGameNameFound) {
-			await interaction.editReply('Alias/Name already used by other game.');
-			return;
+		if (game_name) {
+			const otherGameNameFound = Array.from(interaction.client.data.games.values()).find(game => (game.id !== game_id) && (game.name === game_name));
+			console.log("otherGameNameFound:", otherGameNameFound);
+			if (otherGameNameFound) {
+				await interaction.editReply('Name already used by other game.');
+				return;
+			}
 		}
 
 		if (!(await isGameIdValid(game_id))) {
@@ -39,32 +41,22 @@ export async function execute(interaction) {
 			throw new Error();
 		}
 
-		// Update existing game's guilds and aliases
-		if (gameObject.guilds.includes(interaction.guildId)) {
-			// If the game is already in the guild's list, we don't need to add it again
-			await interaction.editReply(`Game ${gameObject.name} (${gameObject.id}) is already added to this guild.`);
+		const alreadyHadGameName = gameObject.name ? true : false;
+		const gameAlreadyInGuild = gameObject.guilds.includes(interaction.guildId);
+		gameObject.name = game_name ? game_name : `game_${gameObject.id}`;
+
+		// Update existing game's guild
+		if (!await addGameDB(interaction, gameObject)) throw new Error("Failed to add game to DB");
+		// If the game is already in the guild's list, we don't need to add it again
+		if (gameAlreadyInGuild) {
+			await interaction.editReply(`Game ${gameObject.realName} (${gameObject.id}) is already added to this guild. ${alreadyHadGameName ? "Name was updated." : ""}`);
 			return;
 		}
-		gameObject.guilds.push(interaction.guildId);
-
-		// If the game already has a name, we don't overwrite it
-		if (!gameObject.name) {
-			gameObject.name = game_name;
+		else {
+			gameObject.guilds.push(interaction.guildId);
 		}
-		// Else if the game already has a name, we add the new name as an alias
-		else if (!gameObject.aliases.includes(game_name)) {
-			gameObject.aliases.push(game_name);
-		}
-		// Add aliases if they are not already present
-		aliases.forEach(alias => {
-			if (!gameObject.aliases.includes(alias) && gameObject.name !== alias) {
-				gameObject.aliases.push(alias);
-			}
-		});
-
 		if (!await addGameDB(interaction, gameObject)) throw new Error("Failed to add game to DB");
-
-		await interaction.editReply(`Game ${gameObject.name} (${gameObject.id}) added/updated.`);
+		await interaction.editReply(`Game ${gameObject.realName} (${gameObject.id}) added/updated. ${alreadyHadGameName ? "Name was updated." : ""}`);
 
 	} catch (error) {
 		console.error("Error adding game:", error);

@@ -5,7 +5,6 @@ class Game {
     constructor(id, img = null) {
         this.id = parseInt(id);
         this.name = '';
-        this.aliases = [];
         this.realName = '';
         this.guilds = [];
         this.achievements = {}; //Dictionary of achievements; used only if inGuildsGameList is true
