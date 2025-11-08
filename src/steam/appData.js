@@ -28,7 +28,8 @@ async function getOrAddGame(appData, gameId, imgUrl = null, userId = null) {
             newGame.owned = true;
         }
         else {
-            //console.log(`Game with ID ${gameId} is valid and not in appData, adding to appData.`);
+            console.log(`Game with ID ${gameId} is valid and not in appData, adding to appData.`);
+            await newGame.addBaseInfo();
         }
         return newGame;
     } catch (error) {

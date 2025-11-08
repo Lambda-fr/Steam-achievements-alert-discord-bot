@@ -38,7 +38,7 @@ class Game {
                 if (!this.achievements[a.apiname]) {
                     this.achievements[a.apiname] = {
                         achievementName: a.name,
-                        achievementDescription: a.description,
+                        achievementDescription: a.description ? a.description : '',
                         playersUnlockTime: {},
                         globalPercentage: undefined,
                         icon: undefined
@@ -74,6 +74,38 @@ class Game {
         }
     }
 
+    async addBaseInfo() {
+        const id = this.id;
+        const name = this.name;
+        try {
+            const value = await getSchemaForGame(id);
+            if (value.game?.gameName) {
+                this.realName = value.game.gameName;
+            }
+            console.log(`Adding base info for game ${id}: ${this.realName}`);
+            console.log(`Available achievements for game ${id}: ${Object.keys(value.game.availableGameStats.achievements).length
+                }`);
+            for (const a of value.game.availableGameStats.achievements) {
+                if (!this.achievements[a.name]) {
+                    this.achievements[a.name] = {
+                        achievementName: a.displayName,
+                        achievementDescription: a.description ? a.description : '',
+                        playersUnlockTime: {},
+                        globalPercentage: undefined,
+                        icon: a.icon
+                    };
+                }
+            }
+
+            await this.updateGlobalPercentage();
+
+        } catch (err) {
+            console.error(`addBaseInfo error for ${id}, ${name}: `, err);
+            return false;
+        }
+        return true;
+    }
+
     async updateGlobalPercentage() {
         const id = this.id;
         try {
@@ -84,7 +116,7 @@ class Game {
                 }
             }
         } catch (err) {
-            console.error(`updateGlobalPercentage error for ${id}:`, err);
+            console.error(`updateGlobalPercentage error for ${id}: `, err);
             return false;
         }
         return true;
@@ -104,7 +136,7 @@ class Game {
                 }
             }
         } catch (err) {
-            console.error(`getAchievementsIcon error for ${id}, ${name}:`, err);
+            console.error(`getAchievementsIcon error for ${id}, ${name}: `, err);
             return false;
         }
         return true;
@@ -119,7 +151,7 @@ class Game {
                 this.realName = value.game.gameName;
             }
         } catch (err) {
-            console.error(`getRealName error for ${id}, ${name}:`, err);
+            console.error(`getRealName error for ${id}, ${name}: `, err);
             return false;
         }
         return true;
@@ -240,7 +272,7 @@ class Game {
             return [all_timestamps, datasets, this.realName];
 
         } catch (err) {
-            console.error(`displayAchievementsHistory error for ${this.id}:`, err);
+            console.error(`displayAchievementsHistory error for ${this.id}: `, err);
         }
     }
 

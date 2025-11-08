@@ -98,7 +98,7 @@ async function getGlobalAchievementPercentagesForApp(gameId) {
 
 async function getSchemaForGame(appId) {
   try {
-    const res = await fetch(`http://api.steampowered.com/ISteamUserStats/GetSchemaForGame/v2/?appid=${appId}&key=${API_Steam_key}`);
+    const res = await fetch(`http://api.steampowered.com/ISteamUserStats/GetSchemaForGame/v2/?appid=${appId}&key=${API_Steam_key}&l=french`);
     if (!res.ok) {
       throw new Error(`Error fetching game schema (HTTP ${res.status})`);
     }
