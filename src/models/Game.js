@@ -133,7 +133,7 @@ class Game {
                 (!vsUserSteamID || a.playersUnlockTime[vsUserSteamID] !== 0))
             .map(a => {
                 const playersWhoUnlocked = guildUsers.filter(u =>
-                    a.playersUnlockTime[u.steam_id] != 0
+                    a.playersUnlockTime[u.steam_id] ? a.playersUnlockTime[u.steam_id] !== 0 : false
                 );
                 if (playersWhoUnlocked.length > 0) {
                     return { object: a, playersWhoUnlocked };

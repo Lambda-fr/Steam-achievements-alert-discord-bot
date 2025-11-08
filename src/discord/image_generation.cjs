@@ -392,7 +392,7 @@ async function displayAchievementsList(achievements_locked, interaction, canvas_
     const MAX_PAGE = 5
     const background = await Canvas.loadImage(path.join(ASSETS_PATH, 'background.jpg'))
     if (achievements_locked.length === 0) {
-        return
+        return interaction.editReply('No corresponding achievements to display!');
     }
 
     achievements_locked.sort(function (a, b) {

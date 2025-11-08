@@ -46,5 +46,6 @@ export async function execute(interaction) {
 	const validAchievements = gameObject.getCompareAchievements(userAuthor, guildUsers, vsUser);
 	const canvas_title = `Locked achievements for ${userAuthor.nickname} vs. ${vsUser ? vsUser.nickname : 'all'}`;
 	const canvas_title2 = `locked`;
+	console.log(validAchievements);
 	discordImageFunctions.displayAchievementsList(validAchievements, interaction, [canvas_title, canvas_title2]);
 }
