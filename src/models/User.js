@@ -14,7 +14,17 @@ class User {
     this.newAchievements = [];
     this.displayedAchievements = [];
     this.ownedGames = [];
+    this.globalTimestamps = [];
+    this.globalTimestampsNeedsSorting = false;
   }
+  getSortedGlobalTimestamps() {
+    if (this.globalTimestampsNeedsSorting) {
+      this.globalTimestamps.sort((a, b) => a - b);
+      this.globalTimestampsNeedsSorting = false;
+    }
+    return this.globalTimestamps;
+  }
+
   async updateOwnedGamesData(appData) {
     try {
       const value = await getOwnedGames(this.steam_id);

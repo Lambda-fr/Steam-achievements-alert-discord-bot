@@ -45,7 +45,14 @@ class Game {
                     };
                     achievementsNeedIcons = true;
                 }
+                const previouslyUnlocked = this.achievements[a.apiname].playersUnlockTime[user.steam_id] !== 0 && this.achievements[a.apiname].playersUnlockTime[user.steam_id] !== undefined;
+
                 this.achievements[a.apiname].playersUnlockTime[user.steam_id] = a.unlocktime;
+                
+                if (a.unlocktime !== 0 && !previouslyUnlocked) {
+                    user.globalTimestamps.push(a.unlocktime);
+                    user.globalTimestampsNeedsSorting = true;
+                }
 
                 if (a.unlocktime > lastScan) {
                     const lclId = `${this.id}_${a.apiname}`;
