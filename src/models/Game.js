@@ -14,6 +14,7 @@ class Game {
         this.img = img;
         this.nbTotal = 0;
         this.owned = false;
+        this.isFree = false;
     }
 
     async updateAchievementsForUser(appData, userId) { //TO DO : And get Achievements qui respectent l'intervalle de temps demandé.

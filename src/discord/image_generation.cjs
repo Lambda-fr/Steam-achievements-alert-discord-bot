@@ -522,7 +522,7 @@ async function displayLeaderboard(interaction, leaderboardData) {
         const gamesPerLine = 15; // Max icons per line
         const lineSpacing = 5; // Vertical space between lines of icons
 
-        let calculatedTotalHeight = 70; // For title and initial padding
+        let calculatedTotalHeight = 85; // For title and initial padding
 
         for (let i = 0; i < players_fraction.length; i++) {
             const entry = players_fraction[i];
@@ -544,8 +544,13 @@ async function displayLeaderboard(interaction, leaderboardData) {
         context.font = '30px "Open Sans Regular"';
         context.fillStyle = '#ffffff';
         context.fillText('Leaderboard - Games Completed', 25, 45);
+        
+        const includeFreeGames = interaction.options ? (interaction.options.getBoolean('include_free_games') ?? false) : false;
+        context.font = '15px "Open Sans Regular"';
+        context.fillStyle = '#bfbfbf';
+        context.fillText(includeFreeGames ? '(Free-to-play games included)' : '(Free-to-play games excluded)', 25, 65);
 
-        let currentY = 70;
+        let currentY = 85;
 
         for (let i = 0; i < players_fraction.length; i++) {
             const entry = players_fraction[i];

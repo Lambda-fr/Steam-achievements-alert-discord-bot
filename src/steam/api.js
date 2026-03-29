@@ -109,9 +109,10 @@ async function getSchemaForGame(appId) {
   }
 }
 
-async function getOwnedGames(steamId) {
+async function getOwnedGames(steamId, includeFreeGames = false) {
   try {
-    const response = await fetch(`http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key=${API_Steam_key}&steamid=${steamId}&format=json&include_appinfo=true`);
+    const url = `http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key=${API_Steam_key}&steamid=${steamId}&format=json&include_appinfo=true${includeFreeGames ? '&include_played_free_games=1' : ''}`;
+    const response = await fetch(url);
     if (!response.ok) {
       throw new Error(`HTTP error! Status: ${response.status} ${response.statusText}`);
     }

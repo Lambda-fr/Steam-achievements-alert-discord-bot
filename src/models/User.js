@@ -27,15 +27,29 @@ class User {
 
   async updateOwnedGamesData(appData) {
     try {
-      const value = await getOwnedGames(this.steam_id);
-      if (!value?.response?.games) {
+      const valuePaid = await getOwnedGames(this.steam_id, false);
+      const valueAll = await getOwnedGames(this.steam_id, true);
+
+      const paidGameIds = new Set();
+      if (valuePaid?.response?.games) {
+        valuePaid.response.games.forEach(g => paidGameIds.add(g.appid));
+      }
+
+      if (!valueAll?.response?.games) {
         console.warn(`No owned games found for ${this.nickname} (${this.steam_id})`);
         return false;
       }
-      await Promise.all(value.response.games.map(async (gameData) => {
+      
+      const numPaidGames = paidGameIds.size;
+      const numFreeGames = valueAll.response.games.length - numPaidGames;
+
+      await Promise.all(valueAll.response.games.map(async (gameData) => {
         if (await isGameIdValid(gameData.appid)) {
           let game = await getOrAddGame(appData, gameData.appid, gameData.img_icon_url ? `http://media.steampowered.com/steamcommunity/public/images/apps/${gameData.appid}/${gameData.img_icon_url}.jpg` : null, this.steam_id);
           if (game) {
+            if (!paidGameIds.has(gameData.appid)) {
+              game.isFree = true;
+            }
             if (!this.ownedGames.includes(game.id)) {
               this.ownedGames.push(game.id);
             }
@@ -45,7 +59,7 @@ class User {
         }
 
       }));
-      console.log(`Owned games data updated for ${this.nickname} (${this.steam_id})`);
+      console.log(`Owned games data updated for ${this.nickname} (${this.steam_id}) : ${numPaidGames} jeux payants, ${numFreeGames} jeux gratuits.`);
       return true;
 
     } catch (err) {

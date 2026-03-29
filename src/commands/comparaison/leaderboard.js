@@ -4,6 +4,10 @@ import discordImageFunctions from '../../discord/image_generation.cjs'
 export const data = new SlashCommandBuilder()
     .setName('leaderboard')
     .setDescription('Display an overall leaderboard of the total number of achievements unlocked')
+    .addBooleanOption(option =>
+        option.setName('include_free_games')
+            .setDescription('Include free-to-play games in the leaderboard')
+            .setRequired(false));
 
 export async function execute(interaction) {
     try {
@@ -25,9 +29,13 @@ async function updateLeaderboard(interaction) {
             return;
         }
 
+        const includeFreeGames = interaction.options.getBoolean('include_free_games') ?? false;
+
         const leaderboardData = guildUsers.map(user => {
             const completedGames = user.ownedGames.map(gameId => {
                 const game = interaction.client.data.games.get(gameId);
+                if (!includeFreeGames && game && game.isFree) return undefined;
+                
                 if (game && game.isCompleted100Percent[user.steam_id]) {
                     return game;
                 }
@@ -36,6 +44,7 @@ async function updateLeaderboard(interaction) {
             const numberOfCompletedGames = completedGames.length;
             const totalUnlockedAchievements = user.ownedGames.reduce((acc, gameId) => {
                 const game = interaction.client.data.games.get(gameId);
+                if (!includeFreeGames && game && game.isFree) return acc;
                 return acc + (game && game.nbUnlocked[user.steam_id] ? game.nbUnlocked[user.steam_id] : 0);
             }, 0);
 

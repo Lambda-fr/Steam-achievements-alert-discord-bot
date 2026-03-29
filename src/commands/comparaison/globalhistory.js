@@ -4,6 +4,10 @@ import discordImageFunctions from '../../discord/image_generation.cjs';
 export const data = new SlashCommandBuilder()
     .setName('globalhistory')
     .setDescription('Plot the total number of achievements history for all players across all games')
+    .addBooleanOption(option =>
+        option.setName('include_free_games')
+            .setDescription('Include free-to-play games in the history')
+            .setRequired(false))
     .addStringOption(option => option.setName('period')
         .setDescription('The period to display the history for. Defaults to all time.')
         .setRequired(false)
@@ -26,6 +30,7 @@ export async function execute(interaction) {
     try {
         await interaction.deferReply();
         const period = interaction.options.getString('period') ?? 'all'; // Default to 'all'
+        const includeFreeGames = interaction.options.getBoolean('include_free_games') ?? false;
 
         // --- Player Filtering ---
         const specifiedUsers = [
@@ -48,7 +53,24 @@ export async function execute(interaction) {
 
         // Gather all timetamps
         for (const user of usersToDisplay) {
-            const sortedTimestamps = user.getSortedGlobalTimestamps();
+            let sortedTimestamps = [];
+            if (includeFreeGames) {
+                sortedTimestamps = user.getSortedGlobalTimestamps();
+            } else {
+                for (const gameId of user.ownedGames) {
+                    const game = interaction.client.data.games.get(gameId);
+                    if (game && !game.isFree) {
+                        for (const achievement of Object.values(game.achievements)) {
+                            const unlockTime = achievement.playersUnlockTime[user.steam_id];
+                            if (unlockTime && unlockTime > 0) {
+                                sortedTimestamps.push(unlockTime);
+                            }
+                        }
+                    }
+                }
+                sortedTimestamps.sort((a, b) => a - b);
+            }
+
             userTimelines.set(user.steam_id, sortedTimestamps);
             for (const ts of sortedTimestamps) {
                 if (ts > 0) {
@@ -145,7 +167,8 @@ export async function execute(interaction) {
             }
         }
 
-        discordImageFunctions.displayAchievementsHistory(interaction, all_timestamps, datasets, 'All Games', y_min);
+        const titleSuffix = includeFreeGames ? '(Free-to-play games included)' : '(Free-to-play games excluded)';
+        discordImageFunctions.displayAchievementsHistory(interaction, all_timestamps, datasets, `All Games ${titleSuffix}`, y_min);
     } catch (error) {
         console.error('Error fetching global history:', error);
         if (interaction.deferred) {
